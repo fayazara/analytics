@@ -4,10 +4,10 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-workers-template",
+  "name": "web-analytics",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry",
+  "main": "src/server.ts",
   "observability": {
     "enabled": true
   },
@@ -15,15 +15,30 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "tanstack-start-workers-template-db",
-      "database_id": "26986ed2-3d65-45f4-8d32-2696eb339ec8",
+      "database_name": "web-analytics-db",
+      // Run `npx wrangler d1 create web-analytics-db` and paste the
+      // printed database_id here before deploying.
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
       "migrations_dir": "drizzle"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "STORAGE",
-      "bucket_name": "tanstack-start-workers-template-storage"
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "LIVE_VISITORS",
+        "class_name": "LiveVisitors"
+      }
+    ]
+  },
+  "exports": {
+    "LiveVisitors": {
+      "type": "durable-object",
+      "storage": "sqlite"
     }
-  ]
+  },
+  "triggers": {
+    // Runs once daily at 00:10 UTC — rolls up the previous UTC day's raw
+    // rows into the daily_* tables (see src/lib/aggregate.ts).
+    "crons": ["10 0 * * *"]
+  }
 }
