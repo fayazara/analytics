@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lt, sql } from "drizzle-orm"
+import { and, eq, gte, lt, lte, sql } from "drizzle-orm"
 import { db } from "@/db"
 import {
   dailyDevices,
@@ -38,10 +38,10 @@ export async function computeTopPages(
   resolved: ResolvedRange,
   limit = 10,
 ): Promise<TopPageRow[]> {
-  const { rollupDates, includesToday } = splitRangeForQuery(resolved)
+  const { rollupBounds, includesToday } = splitRangeForQuery(resolved)
   const merged = new Map<string, TopPageRow>()
 
-  if (rollupDates.length > 0) {
+  if (rollupBounds) {
     const rows = await db
       .select({
         path: dailyPages.path,
@@ -49,7 +49,13 @@ export async function computeTopPages(
         visitors: sql<number>`SUM(${dailyPages.visitors})`,
       })
       .from(dailyPages)
-      .where(and(eq(dailyPages.siteId, site.id), inArray(dailyPages.date, rollupDates)))
+      .where(
+        and(
+          eq(dailyPages.siteId, site.id),
+          gte(dailyPages.date, rollupBounds.from),
+          lte(dailyPages.date, rollupBounds.to),
+        ),
+      )
       .groupBy(dailyPages.path)
     for (const r of rows) {
       merged.set(r.path, {
@@ -105,11 +111,11 @@ export async function computeTopSources(
   resolved: ResolvedRange,
   limit = 10,
 ): Promise<TopSourceRow[]> {
-  const { rollupDates, includesToday } = splitRangeForQuery(resolved)
+  const { rollupBounds, includesToday } = splitRangeForQuery(resolved)
   const merged = new Map<string, TopSourceRow>()
   const key = (r: string, s: string, m: string) => `${r}\u0000${s}\u0000${m}`
 
-  if (rollupDates.length > 0) {
+  if (rollupBounds) {
     const rows = await db
       .select({
         referrerDomain: dailySources.referrerDomain,
@@ -119,7 +125,11 @@ export async function computeTopSources(
       })
       .from(dailySources)
       .where(
-        and(eq(dailySources.siteId, site.id), inArray(dailySources.date, rollupDates)),
+        and(
+          eq(dailySources.siteId, site.id),
+          gte(dailySources.date, rollupBounds.from),
+          lte(dailySources.date, rollupBounds.to),
+        ),
       )
       .groupBy(dailySources.referrerDomain, dailySources.utmSource, dailySources.utmMedium)
     for (const r of rows) {
@@ -183,11 +193,11 @@ export async function computeTopDevices(
   resolved: ResolvedRange,
   limit = 10,
 ): Promise<TopDeviceRow[]> {
-  const { rollupDates, includesToday } = splitRangeForQuery(resolved)
+  const { rollupBounds, includesToday } = splitRangeForQuery(resolved)
   const merged = new Map<string, TopDeviceRow>()
   const key = (t: string, b: string) => `${t}\u0000${b}`
 
-  if (rollupDates.length > 0) {
+  if (rollupBounds) {
     const rows = await db
       .select({
         deviceType: dailyDevices.deviceType,
@@ -196,7 +206,11 @@ export async function computeTopDevices(
       })
       .from(dailyDevices)
       .where(
-        and(eq(dailyDevices.siteId, site.id), inArray(dailyDevices.date, rollupDates)),
+        and(
+          eq(dailyDevices.siteId, site.id),
+          gte(dailyDevices.date, rollupBounds.from),
+          lte(dailyDevices.date, rollupBounds.to),
+        ),
       )
       .groupBy(dailyDevices.deviceType, dailyDevices.browser)
     for (const r of rows) {
@@ -253,11 +267,11 @@ export async function computeTopLocations(
   resolved: ResolvedRange,
   limit = 10,
 ): Promise<TopLocationRow[]> {
-  const { rollupDates, includesToday } = splitRangeForQuery(resolved)
+  const { rollupBounds, includesToday } = splitRangeForQuery(resolved)
   const merged = new Map<string, TopLocationRow>()
   const key = (c: string, city: string) => `${c}\u0000${city}`
 
-  if (rollupDates.length > 0) {
+  if (rollupBounds) {
     const rows = await db
       .select({
         country: dailyLocations.country,
@@ -266,7 +280,11 @@ export async function computeTopLocations(
       })
       .from(dailyLocations)
       .where(
-        and(eq(dailyLocations.siteId, site.id), inArray(dailyLocations.date, rollupDates)),
+        and(
+          eq(dailyLocations.siteId, site.id),
+          gte(dailyLocations.date, rollupBounds.from),
+          lte(dailyLocations.date, rollupBounds.to),
+        ),
       )
       .groupBy(dailyLocations.country, dailyLocations.city)
     for (const r of rows) {
@@ -324,14 +342,20 @@ export async function computeTopEvents(
   resolved: ResolvedRange,
   limit = 10,
 ): Promise<TopEventRow[]> {
-  const { rollupDates, includesToday } = splitRangeForQuery(resolved)
+  const { rollupBounds, includesToday } = splitRangeForQuery(resolved)
   const merged = new Map<string, number>()
 
-  if (rollupDates.length > 0) {
+  if (rollupBounds) {
     const rows = await db
       .select({ name: dailyEvents.name, count: sql<number>`SUM(${dailyEvents.count})` })
       .from(dailyEvents)
-      .where(and(eq(dailyEvents.siteId, site.id), inArray(dailyEvents.date, rollupDates)))
+      .where(
+        and(
+          eq(dailyEvents.siteId, site.id),
+          gte(dailyEvents.date, rollupBounds.from),
+          lte(dailyEvents.date, rollupBounds.to),
+        ),
+      )
       .groupBy(dailyEvents.name)
     for (const r of rows) merged.set(r.name, Number(r.count))
   }

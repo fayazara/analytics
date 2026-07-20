@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm"
+import { and, eq, gte, lte } from "drizzle-orm"
 import { db } from "@/db"
 import { dailySummary, type Site } from "@/db/schema"
 import { splitRangeForQuery, startOfDayUtcMs, type ResolvedRange } from "@/lib/dates"
@@ -25,7 +25,7 @@ export async function computeSummary(
   site: Site,
   resolved: ResolvedRange,
 ): Promise<SummaryResult> {
-  const { rollupDates, includesToday } = splitRangeForQuery(resolved)
+  const { rollupBounds, includesToday } = splitRangeForQuery(resolved)
 
   let visitors = 0
   let visitsTotal = 0
@@ -33,12 +33,16 @@ export async function computeSummary(
   let bounceWeighted = 0
   let durationWeighted = 0
 
-  if (rollupDates.length > 0) {
+  if (rollupBounds) {
     const rows = await db
       .select()
       .from(dailySummary)
       .where(
-        and(eq(dailySummary.siteId, site.id), inArray(dailySummary.date, rollupDates)),
+        and(
+          eq(dailySummary.siteId, site.id),
+          gte(dailySummary.date, rollupBounds.from),
+          lte(dailySummary.date, rollupBounds.to),
+        ),
       )
     for (const r of rows) {
       visitors += r.visitors

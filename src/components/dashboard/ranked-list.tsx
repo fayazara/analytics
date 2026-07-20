@@ -63,7 +63,7 @@ export function RankedList({
         {items.map((item) => (
           <div
             key={item.key}
-            className="relative flex shrink-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm"
+            className="relative flex shrink-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-kumo-subtle"
           >
             <div
               className="absolute inset-y-0 left-0 rounded-md bg-kumo-tint"

@@ -128,10 +128,20 @@ export function resolveRange(
  * Splits a resolved range into "complete past days" (safe to read from
  * `daily_*` rollups) and whether "today" is included (must be read from
  * raw tables). This is the query rule from §8.
+ *
+ * `rollupDates` is for client-side iteration (e.g. zero-filling missing
+ * days in a chart) — never pass it to `inArray()` in a query. D1 caps
+ * bound parameters at 100 per statement, and a `6m`/`1y` range easily
+ * has 180-365 dates. Use `rollupBounds` (2 params, `date BETWEEN`)
+ * instead — safe because `rollupDates` is always a contiguous run.
  */
 export function splitRangeForQuery(range: ResolvedRange) {
   const allDates = dateRangeList(range.fromDate, range.toDate)
   const rollupDates = allDates.filter((d) => d < range.today)
   const includesToday = allDates.includes(range.today)
-  return { includesToday, rollupDates }
+  const rollupBounds =
+    rollupDates.length > 0
+      ? { from: rollupDates[0]!, to: rollupDates[rollupDates.length - 1]! }
+      : null
+  return { includesToday, rollupDates, rollupBounds }
 }

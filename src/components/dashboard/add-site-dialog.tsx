@@ -55,6 +55,7 @@ export function AddSiteDialog({ onCreated }: AddSiteDialogProps) {
             icon={PlusIcon}
             size="sm"
             shape="circle"
+            aria-label="Add site"
           />
         )}
       />

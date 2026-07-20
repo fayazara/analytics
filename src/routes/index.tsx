@@ -21,7 +21,7 @@ import { db } from "@/db"
 import { sites } from "@/db/schema"
 import { useLiveVisitorCount } from "@/hooks/use-live-visitors"
 import { echarts } from "@/lib/echarts"
-import { formatCompactNumber, formatDuration, formatPercent } from "@/lib/format"
+import { formatCompactNumber, formatPercent } from "@/lib/format"
 
 /** Server function — the dashboard's own UI reads the site list this way. */
 const getSites = createServerFn().handler(async () => {
@@ -58,7 +58,7 @@ interface SummaryResponse {
 }
 
 interface TimeseriesPoint {
-  date: string
+  timestamp: number
   pageviews: number
   visitors: number
 }
@@ -129,31 +129,57 @@ function App() {
 
     const base = `/api/sites/${selectedSiteId}`
     Promise.all([
-      fetchJson<SummaryResponse>(`${base}/summary?range=${range}`, controller.signal),
+      fetchJson<SummaryResponse>(
+        `${base}/summary?range=${range}`,
+        controller.signal
+      ),
       fetchJson<{ points: TimeseriesPoint[] }>(
         `${base}/timeseries?range=${range}`,
         controller.signal,
       ),
-      fetchJson<{ rows: TopPageRow[] }>(`${base}/pages?range=${range}`, controller.signal),
-      fetchJson<{ rows: TopSourceRow[] }>(`${base}/sources?range=${range}`, controller.signal),
-      fetchJson<{ rows: TopDeviceRow[] }>(`${base}/devices?range=${range}`, controller.signal),
+      fetchJson<{ rows: TopPageRow[] }>(
+        `${base}/pages?range=${range}`,
+        controller.signal
+      ),
+      fetchJson<{ rows: TopSourceRow[] }>(
+        `${base}/sources?range=${range}`,
+        controller.signal
+      ),
+      fetchJson<{ rows: TopDeviceRow[] }>(
+        `${base}/devices?range=${range}`,
+        controller.signal
+      ),
       fetchJson<{ rows: TopLocationRow[] }>(
         `${base}/locations?range=${range}`,
-        controller.signal,
+        controller.signal
       ),
-      fetchJson<{ rows: TopEventRow[] }>(`${base}/events?range=${range}`, controller.signal),
+      fetchJson<{ rows: TopEventRow[] }>(
+        `${base}/events?range=${range}`,
+        controller.signal
+      ),
     ])
-      .then(([summaryRes, tsRes, pagesRes, sourcesRes, devicesRes, locationsRes, eventsRes]) => {
-        setSummary(summaryRes)
+      .then(
+        ([
+          summaryRes,
+          tsRes,
+          pagesRes,
+          sourcesRes,
+          devicesRes,
+          locationsRes,
+          eventsRes,
+        ]) => {
+          setSummary(summaryRes)
         setPoints(tsRes.points)
-        setPageRows(pagesRes.rows)
-        setSourceRows(sourcesRes.rows)
-        setDeviceRows(devicesRes.rows)
-        setLocationRows(locationsRes.rows)
-        setEventRows(eventsRes.rows)
-      })
+          setPageRows(pagesRes.rows)
+          setSourceRows(sourcesRes.rows)
+          setDeviceRows(devicesRes.rows)
+          setLocationRows(locationsRes.rows)
+          setEventRows(eventsRes.rows)
+        }
+      )
       .catch((err) => {
-        if (err instanceof Error && err.name !== "AbortError") console.error(err)
+        if (err instanceof Error && err.name !== "AbortError")
+          console.error(err)
       })
       .finally(() => setLoading(false))
 
@@ -175,20 +201,16 @@ function App() {
     () => [
       {
         name: "Pageviews",
-        data: points.map(
-          (p) => [Date.parse(`${p.date}T00:00:00Z`), p.pageviews] as [number, number],
-        ),
+        data: points.map((p) => [p.timestamp, p.pageviews] as [number, number]),
         color: ChartPalette.categorical(0),
       },
       {
         name: "Visitors",
-        data: points.map(
-          (p) => [Date.parse(`${p.date}T00:00:00Z`), p.visitors] as [number, number],
-        ),
+        data: points.map((p) => [p.timestamp, p.visitors] as [number, number]),
         color: ChartPalette.categorical(1),
       },
     ],
-    [points],
+    [points]
   )
 
   if (allSites.length === 0) {
@@ -204,7 +226,8 @@ function App() {
     )
   }
 
-  const selectedSite = allSites.find((s) => s.id === selectedSiteId) ?? allSites[0]!
+  const selectedSite =
+    allSites.find((s) => s.id === selectedSiteId) ?? allSites[0]!
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
@@ -239,7 +262,9 @@ function App() {
             size="sm"
             value={range}
             onValueChange={(v) => v && selectRange(v as UiRangeKey)}
-            renderValue={(v) => RANGE_OPTIONS.find((o) => o.value === v)?.label ?? v}
+            renderValue={(v) =>
+              RANGE_OPTIONS.find((o) => o.value === v)?.label ?? v
+            }
             aria-label="Date range"
           >
             {RANGE_OPTIONS.map((o) => (
@@ -253,9 +278,9 @@ function App() {
       </header>
 
       <LayerCard>
-          <LayerCard.Secondary>Overview</LayerCard.Secondary>
+        <LayerCard.Secondary>Overview</LayerCard.Secondary>
         <LayerCard.Primary>
-          <div className="mb-3 flex flex-wrap divides-x divide-kumo-line px-1">
+          <div className="mb-3 flex flex-wrap divide-x divide-kumo-line px-1">
             <ChartLegend.LargeItem
               name="Visitors"
               color={ChartPalette.categorical(1)}
@@ -299,7 +324,7 @@ function App() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <LayerCard>
           <LayerCard.Secondary>Top pages</LayerCard.Secondary>
-          <LayerCard.Primary>
+          <LayerCard.Primary className="h-full p-2.5">
             <RankedList
               items={pageRows.map((r) => ({
                 key: r.path,
@@ -312,7 +337,7 @@ function App() {
 
         <LayerCard>
           <LayerCard.Secondary>Top sources</LayerCard.Secondary>
-          <LayerCard.Primary>
+          <LayerCard.Primary className="h-full p-2.5">
             <RankedList
               items={sourceRows.map((r) => ({
                 key: `${r.referrerDomain}-${r.utmSource}-${r.utmMedium}`,
@@ -326,7 +351,7 @@ function App() {
 
         <LayerCard>
           <LayerCard.Secondary>Devices</LayerCard.Secondary>
-          <LayerCard.Primary>
+          <LayerCard.Primary className="h-full p-2.5">
             <RankedList
               items={deviceRows.map((r) => ({
                 key: `${r.deviceType}-${r.browser}`,
@@ -339,7 +364,7 @@ function App() {
 
         <LayerCard>
           <LayerCard.Secondary>Locations</LayerCard.Secondary>
-          <LayerCard.Primary>
+          <LayerCard.Primary className="h-full p-2.5">
             <RankedList
               items={locationRows.map((r) => ({
                 key: `${r.country}-${r.city}`,
@@ -353,9 +378,13 @@ function App() {
 
         <LayerCard className="sm:col-span-2">
           <LayerCard.Secondary>Custom events</LayerCard.Secondary>
-          <LayerCard.Primary>
+          <LayerCard.Primary className="h-full p-2.5">
             <RankedList
-              items={eventRows.map((r) => ({ key: r.name, label: r.name, value: r.count }))}
+              items={eventRows.map((r) => ({
+                key: r.name,
+                label: r.name,
+                value: r.count,
+              }))}
               emptyLabel="No custom events yet"
             />
           </LayerCard.Primary>
