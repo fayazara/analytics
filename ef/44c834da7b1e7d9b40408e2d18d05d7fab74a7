@@ -1,0 +1,19 @@
+src/components/dashboard/icons.tsx
+  s_51d16f4f49630e::t_638721058d98d0 6,21,27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "ef44c834da7b1e7d9b40408e2d18d05d7fab74a7",
+  "prompts": {},
+  "sessions": {
+    "s_51d16f4f49630e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_081289d07ffe87KQhscR8IgGRG",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Fayaz Ahmed <fayazara@gmail.com>"
+    }
+  }
+}
