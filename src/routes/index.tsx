@@ -21,7 +21,11 @@ import { db } from "@/db"
 import { sites } from "@/db/schema"
 import { useLiveVisitorCount } from "@/hooks/use-live-visitors"
 import { echarts } from "@/lib/echarts"
-import { formatCompactNumber, formatPercent } from "@/lib/format"
+import {
+  formatCompactNumber,
+  formatDuration,
+  formatPercent,
+} from "@/lib/format"
 
 /** Server function — the dashboard's own UI reads the site list this way. */
 const getSites = createServerFn().handler(async () => {
@@ -135,7 +139,7 @@ function App() {
       ),
       fetchJson<{ points: TimeseriesPoint[] }>(
         `${base}/timeseries?range=${range}`,
-        controller.signal,
+        controller.signal
       ),
       fetchJson<{ rows: TopPageRow[] }>(
         `${base}/pages?range=${range}`,
@@ -169,7 +173,7 @@ function App() {
           eventsRes,
         ]) => {
           setSummary(summaryRes)
-        setPoints(tsRes.points)
+          setPoints(tsRes.points)
           setPageRows(pagesRes.rows)
           setSourceRows(sourcesRes.rows)
           setDeviceRows(devicesRes.rows)
@@ -279,38 +283,38 @@ function App() {
 
       <LayerCard>
         <LayerCard.Secondary>Overview</LayerCard.Secondary>
-        <LayerCard.Primary>
-          <div className="mb-3 flex flex-wrap divide-x divide-kumo-line px-1">
+        <LayerCard.Primary className="h-full p-2.5">
+          <div className="mb-3 flex flex-wrap divide-x divide-neutral-100 px-1">
             <ChartLegend.LargeItem
               name="Visitors"
               color={ChartPalette.categorical(1)}
               value={formatCompactNumber(summary?.visitors ?? 0)}
-              className="pr-4"
+              className="min-w-32 pr-4"
             />
             <ChartLegend.LargeItem
               name="Visits"
               color={ChartPalette.categorical(2)}
               value={formatCompactNumber(summary?.visits ?? 0)}
-              className="px-4"
+              className="min-w-32 px-4"
             />
             <ChartLegend.LargeItem
               name="Pageviews"
               color={ChartPalette.categorical(0)}
               value={formatCompactNumber(summary?.pageviews ?? 0)}
-              className="px-4"
+              className="min-w-32 px-4"
             />
             <ChartLegend.LargeItem
               name="Bounce rate"
               color={ChartPalette.semantic("Warning")}
               value={formatPercent(summary?.bounceRate ?? 0)}
-              className="px-4"
+              className="min-w-32 px-4"
             />
-            {/* <ChartLegend.LargeItem
+            <ChartLegend.LargeItem
               name="Avg. duration"
               color={ChartPalette.semantic("Neutral")}
               value={formatDuration(summary?.avgDurationSeconds ?? 0)}
-              className="pl-4"
-            /> */}
+              className="min-w-32 pl-4"
+            />
           </div>
           <TimeseriesChart
             echarts={echarts}
@@ -331,6 +335,7 @@ function App() {
                 label: r.path,
                 value: r.pageviews,
               }))}
+              total={summary?.pageviews}
             />
           </LayerCard.Primary>
         </LayerCard>
@@ -345,6 +350,7 @@ function App() {
                 icon: <SourceIcon domain={r.referrerDomain} />,
                 value: r.visits,
               }))}
+              total={summary?.visits}
             />
           </LayerCard.Primary>
         </LayerCard>
@@ -358,6 +364,7 @@ function App() {
                 label: `${r.browser} · ${r.deviceType}`,
                 value: r.visits,
               }))}
+              total={summary?.visits}
             />
           </LayerCard.Primary>
         </LayerCard>
@@ -372,6 +379,7 @@ function App() {
                 icon: <CountryFlag country={r.country} />,
                 value: r.visits,
               }))}
+              total={summary?.visits}
             />
           </LayerCard.Primary>
         </LayerCard>
