@@ -1,0 +1,5 @@
+# Copy to .dev.vars and fill in. Loaded by wrangler in local dev only.
+# For production, set with: wrangler secret put MY_SECRET
+# Bindings (D1, KV, R2, etc.) go in wrangler.jsonc, NOT here.
+
+# MY_SECRET="example"
