@@ -253,8 +253,9 @@ function App() {
       </header>
 
       <LayerCard>
+          <LayerCard.Secondary>Overview</LayerCard.Secondary>
         <LayerCard.Primary>
-          <div className="mb-3 flex flex-wrap divide-x divide-kumo-line px-1">
+          <div className="mb-3 flex flex-wrap divides-x divide-kumo-line px-1">
             <ChartLegend.LargeItem
               name="Visitors"
               color={ChartPalette.categorical(1)}
@@ -279,20 +280,17 @@ function App() {
               value={formatPercent(summary?.bounceRate ?? 0)}
               className="px-4"
             />
-            <ChartLegend.LargeItem
+            {/* <ChartLegend.LargeItem
               name="Avg. duration"
               color={ChartPalette.semantic("Neutral")}
               value={formatDuration(summary?.avgDurationSeconds ?? 0)}
               className="pl-4"
-            />
+            /> */}
           </div>
           <TimeseriesChart
             echarts={echarts}
             data={chartData}
             height={260}
-            xAxisName="Date"
-            yAxisName="Count"
-            gradient
             loading={loading && points.length === 0}
           />
         </LayerCard.Primary>

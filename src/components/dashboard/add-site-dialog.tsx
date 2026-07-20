@@ -49,12 +49,16 @@ export function AddSiteDialog({ onCreated }: AddSiteDialogProps) {
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger
         render={(triggerProps) => (
-          <Button {...triggerProps} variant="secondary" icon={PlusIcon} size="sm">
-            Add site
-          </Button>
+          <Button
+            {...triggerProps}
+            variant="primary"
+            icon={PlusIcon}
+            size="sm"
+            shape="circle"
+          />
         )}
       />
-      <Dialog className="p-6" size="sm">
+      <Dialog className="p-4">
         <Dialog.Title className="mb-4 text-lg font-semibold">
           Add a site
         </Dialog.Title>
@@ -84,12 +88,24 @@ export function AddSiteDialog({ onCreated }: AddSiteDialogProps) {
           <div className="flex justify-end gap-2">
             <Dialog.Close
               render={(closeProps) => (
-                <Button {...closeProps} variant="secondary" type="button">
+                <Button
+                  {...closeProps}
+                  variant="secondary"
+                  type="button"
+                  aria-label="Cancel"
+                  size="sm"
+                >
                   Cancel
                 </Button>
               )}
             />
-            <Button type="submit" variant="primary" loading={isPending} disabled={isPending}>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isPending}
+              disabled={isPending}
+              size="sm"
+            >
               Create site
             </Button>
           </div>
