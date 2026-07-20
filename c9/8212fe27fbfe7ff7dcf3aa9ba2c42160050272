@@ -1,0 +1,29 @@
+.gitignore
+  s_51d16f4f49630e::t_949edb02e11ad9 19
+drizzle/0000_married_scorpion.sql
+  s_51d16f4f49630e::t_025c2fea87c5a2 1-148
+drizzle/meta/0000_snapshot.json
+  s_51d16f4f49630e::t_e2fff460bca212 4,7-397,406-563,568-641,645-646,649,652-659,665-674,681-999
+drizzle/meta/_journal.json
+  s_51d16f4f49630e::t_fd5b7068da8914 8-9
+pnpm-lock.yaml
+  s_51d16f4f49630e::t_1fbbcb413a3b11 50-52,6693
+src/routeTree.gen.ts
+  s_51d16f4f49630e::t_4eaf265f8970bf 12,14-23,25-29,35-37,40-74,76-86,90-100,104-114,119-129,133-145,147-173,178-179,184-190,198-202,205-266,271-308,311-312
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c98212fe27fbfe7ff7dcf3aa9ba2c42160050272",
+  "prompts": {},
+  "sessions": {
+    "s_51d16f4f49630e": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_081289d07ffe87KQhscR8IgGRG",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Fayaz Ahmed <fayazara@gmail.com>"
+    }
+  }
+}
