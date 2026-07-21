@@ -8,14 +8,28 @@ import {
 import { Empty } from "@cloudflare/kumo/components/empty"
 import { DropdownMenu } from "@cloudflare/kumo/components/dropdown"
 import { LayerCard } from "@cloudflare/kumo/components/layer-card"
-import { CaretDownIcon, CodeIcon } from "@phosphor-icons/react"
+import {
+  BrowserIcon,
+  CaretDownIcon,
+  CodeIcon,
+  TrashIcon,
+} from "@phosphor-icons/react"
 import { ChartBarIcon } from "@phosphor-icons/react/dist/ssr"
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import { useEffect, useMemo, useState } from "react"
 import { z } from "zod"
 import { AddSiteDialog } from "@/components/dashboard/add-site-dialog"
-import { CountryFlag, SourceIcon } from "@/components/dashboard/icons"
+import { DeleteSiteDialog } from "@/components/dashboard/delete-site-dialog"
+import {
+  ChromeLogo,
+  CountryFlag,
+  FirefoxLogo,
+  MicrosoftEdgeLogo,
+  SafariLogo,
+  SamsungBrowserLogo,
+  SourceIcon,
+} from "@/components/dashboard/icons"
 import { InstallScriptDialog } from "@/components/dashboard/install-script-dialog"
 import { RankedList } from "@/components/dashboard/ranked-list"
 import { useLiveVisitorCount } from "@/hooks/use-live-visitors"
@@ -86,6 +100,40 @@ interface TopDeviceRow {
   visits: number
 }
 
+function BrowserMark({ browser }: { browser: string }) {
+  let logo
+  switch (browser) {
+    case "Chrome":
+      logo = <ChromeLogo />
+      break
+    case "Safari":
+      logo = <SafariLogo />
+      break
+    case "Firefox":
+      logo = <FirefoxLogo />
+      break
+    case "Edge":
+    case "Microsoft Edge":
+      logo = <MicrosoftEdgeLogo />
+      break
+    case "Samsung Internet":
+    case "Samsung Browser":
+      logo = <SamsungBrowserLogo />
+      break
+    default:
+      logo = <BrowserIcon />
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-5 shrink-0 items-center justify-center [&>svg]:size-5"
+    >
+      {logo}
+    </span>
+  )
+}
+
 interface TopLocationRow {
   country: string
   city: string
@@ -124,6 +172,7 @@ function App() {
   const [eventRows, setEventRows] = useState<Array<TopEventRow>>([])
   const [loading, setLoading] = useState(false)
   const [addSiteOpen, setAddSiteOpen] = useState(false)
+  const [deleteSiteId, setDeleteSiteId] = useState<string | null>(null)
   const [installSiteId, setInstallSiteId] = useState<string | null>(null)
 
   const liveCount = useLiveVisitorCount(selectedSiteId)
@@ -204,6 +253,17 @@ function App() {
     setInstallSiteId(id)
   }
 
+  async function handleSiteDeleted(id: string) {
+    const nextSite = allSites.find((site) => site.id !== id)
+    setDeleteSiteId(null)
+    await router.invalidate()
+    navigate({
+      to: "/",
+      search: (prev) => ({ ...prev, site: nextSite?.id }),
+      replace: true,
+    })
+  }
+
   const chartData = useMemo(
     () => [
       {
@@ -237,6 +297,8 @@ function App() {
     allSites.find((s) => s.id === selectedSiteId) ?? allSites[0]
   const installSite =
     allSites.find((site) => site.id === installSiteId) ?? selectedSite
+  const deleteSite =
+    allSites.find((site) => site.id === deleteSiteId) ?? selectedSite
   const rangeLabel =
     RANGE_OPTIONS.find((option) => option.value === range)?.label ?? range
 
@@ -278,6 +340,14 @@ function App() {
               <DropdownMenu.Separator />
               <DropdownMenu.Item onClick={() => setAddSiteOpen(true)}>
                 Add site
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator />
+              <DropdownMenu.Item
+                variant="danger"
+                icon={<TrashIcon />}
+                onClick={() => setDeleteSiteId(selectedSite.id)}
+              >
+                Delete site
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu>
@@ -338,6 +408,13 @@ function App() {
         siteId={installSite.id}
         siteName={installSite.name}
         trackerOrigin={trackerOrigin}
+      />
+      <DeleteSiteDialog
+        open={deleteSiteId !== null}
+        onOpenChange={(open) => !open && setDeleteSiteId(null)}
+        siteId={deleteSite.id}
+        siteName={deleteSite.name}
+        onDeleted={handleSiteDeleted}
       />
 
       <LayerCard>
@@ -421,6 +498,7 @@ function App() {
               items={deviceRows.map((r) => ({
                 key: `${r.deviceType}-${r.browser}`,
                 label: `${r.browser} · ${r.deviceType}`,
+                icon: <BrowserMark browser={r.browser} />,
                 value: r.visits,
               }))}
               total={summary?.visits}
