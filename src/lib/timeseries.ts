@@ -30,36 +30,40 @@ export async function computeTimeseries(
   }
 
   const { rollupDates, rollupBounds, includesToday } = splitRangeForQuery(resolved)
-  const points: TimeseriesPoint[] = []
+  const todayStart = startOfDayUtcMs(resolved.today, site.timezone)
 
-  if (rollupBounds) {
-    const rows = await db
-      .select()
-      .from(dailySummary)
-      .where(
-        and(
-          eq(dailySummary.siteId, site.id),
-          gte(dailySummary.date, rollupBounds.from),
-          lte(dailySummary.date, rollupBounds.to),
-        ),
-      )
-      .orderBy(asc(dailySummary.date))
-    const byDate = new Map(rows.map((r) => [r.date, r]))
-    for (const date of rollupDates) {
-      const r = byDate.get(date)
-      points.push({
-        timestamp: startOfDayUtcMs(date, site.timezone),
-        pageviews: r?.pageviews ?? 0,
-        visitors: r?.visitors ?? 0,
-      })
-    }
+  // Same deal as computeSummary — these two don't depend on each other.
+  const [rollupRows, today] = await Promise.all([
+    rollupBounds
+      ? db
+          .select()
+          .from(dailySummary)
+          .where(
+            and(
+              eq(dailySummary.siteId, site.id),
+              gte(dailySummary.date, rollupBounds.from),
+              lte(dailySummary.date, rollupBounds.to),
+            ),
+          )
+          .orderBy(asc(dailySummary.date))
+      : Promise.resolve([]),
+    includesToday
+      ? computeRawStats(site.id, Math.floor(todayStart / 1000), Math.floor(Date.now() / 1000))
+      : Promise.resolve(null),
+  ])
+
+  const points: TimeseriesPoint[] = []
+  const byDate = new Map(rollupRows.map((r) => [r.date, r]))
+  for (const date of rollupDates) {
+    const r = byDate.get(date)
+    points.push({
+      timestamp: startOfDayUtcMs(date, site.timezone),
+      pageviews: r?.pageviews ?? 0,
+      visitors: r?.visitors ?? 0,
+    })
   }
 
-  if (includesToday) {
-    const todayStart = startOfDayUtcMs(resolved.today, site.timezone)
-    const startSec = Math.floor(todayStart / 1000)
-    const endSec = Math.floor(Date.now() / 1000)
-    const today = await computeRawStats(site.id, startSec, endSec)
+  if (today) {
     points.push({
       timestamp: todayStart,
       pageviews: today.pageviews,
@@ -80,22 +84,24 @@ async function computeHourlyPoints(
   const currentHour = Math.min(23, Math.floor((nowSec - dayStartSec) / 3600))
 
   const pageBucket = sql<number>`CAST((${pages.timestamp} - ${dayStartSec}) / 3600 AS INTEGER)`
-  const pageRows = await db
-    .select({ bucket: pageBucket, pageviews: sql<number>`COUNT(*)` })
-    .from(pages)
-    .where(
-      and(eq(pages.siteId, site.id), gte(pages.timestamp, dayStartSec), lt(pages.timestamp, nowSec + 1)),
-    )
-    .groupBy(pageBucket)
-
   const visitBucket = sql<number>`CAST((${visits.startedAt} - ${dayStartSec}) / 3600 AS INTEGER)`
-  const visitRows = await db
-    .select({ bucket: visitBucket, visitors: sql<number>`COUNT(DISTINCT ${visits.visitorId})` })
-    .from(visits)
-    .where(
-      and(eq(visits.siteId, site.id), gte(visits.startedAt, dayStartSec), lt(visits.startedAt, nowSec + 1)),
-    )
-    .groupBy(visitBucket)
+
+  const [pageRows, visitRows] = await Promise.all([
+    db
+      .select({ bucket: pageBucket, pageviews: sql<number>`COUNT(*)` })
+      .from(pages)
+      .where(
+        and(eq(pages.siteId, site.id), gte(pages.timestamp, dayStartSec), lt(pages.timestamp, nowSec + 1)),
+      )
+      .groupBy(pageBucket),
+    db
+      .select({ bucket: visitBucket, visitors: sql<number>`COUNT(DISTINCT ${visits.visitorId})` })
+      .from(visits)
+      .where(
+        and(eq(visits.siteId, site.id), gte(visits.startedAt, dayStartSec), lt(visits.startedAt, nowSec + 1)),
+      )
+      .groupBy(visitBucket),
+  ])
 
   const pageviewsByHour = new Map(pageRows.map((r) => [Number(r.bucket), Number(r.pageviews)]))
   const visitorsByHour = new Map(visitRows.map((r) => [Number(r.bucket), Number(r.visitors)]))

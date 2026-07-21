@@ -2,7 +2,7 @@
  * Personal Web Analytics — tracking snippet.
  *
  * Usage:
- *   <script defer src="https://your-worker.example.com/script.js" data-site="SITE_ID"></script>
+ *   <script defer src="https://analytics.fayazahmed.com/script.js" data-site="SITE_ID"></script>
  *
  * Custom events:
  *   window.wa.track("signup", { plan: "pro" })
@@ -26,8 +26,10 @@
   function send(payload) {
     var body = JSON.stringify(payload)
     try {
-      if (navigator.sendBeacon) {
+      if (
+        navigator.sendBeacon &&
         navigator.sendBeacon(endpoint, new Blob([body], { type: "text/plain" }))
+      ) {
         return
       }
     } catch (_err) {
@@ -41,19 +43,39 @@
     }).catch(function () {})
   }
 
+  function referrerHostname() {
+    if (!document.referrer) return null
+    try {
+      return new URL(document.referrer).hostname || null
+    } catch (_err) {
+      return null
+    }
+  }
+
   function trackPageview() {
-    var path = location.pathname + location.search
+    // Query strings and hashes may contain sensitive values and create a
+    // separate analytics row for every parameter combination. Campaign
+    // parameters are allowlisted below instead of being included in `path`.
+    var path = location.pathname || "/"
     if (path === lastPath) return
     lastPath = path
 
-    send({
+    var search = new URLSearchParams(location.search)
+    var payload = {
       site_id: siteId,
       path: path,
       title: document.title,
-      referrer: document.referrer || null,
-      screen_w: window.screen ? window.screen.width : undefined,
-      screen_h: window.screen ? window.screen.height : undefined,
-    })
+      referrer: referrerHostname(),
+    }
+
+    var utmSource = search.get("utm_source")
+    var utmMedium = search.get("utm_medium")
+    var utmCampaign = search.get("utm_campaign")
+    if (utmSource) payload.utm_source = utmSource
+    if (utmMedium) payload.utm_medium = utmMedium
+    if (utmCampaign) payload.utm_campaign = utmCampaign
+
+    send(payload)
   }
 
   function trackEvent(name, props) {
@@ -79,7 +101,10 @@
   // Public API for custom events (§6).
   window.wa = { track: trackEvent }
 
-  if (document.readyState === "complete" || document.readyState === "interactive") {
+  if (
+    document.readyState === "complete" ||
+    document.readyState === "interactive"
+  ) {
     trackPageview()
   } else {
     document.addEventListener("DOMContentLoaded", trackPageview)

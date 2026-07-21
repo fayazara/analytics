@@ -10,6 +10,9 @@ export const collectRequestSchema = z.object({
   path: z.string().min(1).max(2048).optional(),
   title: z.string().max(500).optional().nullable(),
   referrer: z.string().max(2048).optional().nullable(),
+  utm_source: z.string().max(200).optional(),
+  utm_medium: z.string().max(200).optional(),
+  utm_campaign: z.string().max(500).optional(),
   screen_w: z.number().int().positive().optional(),
   screen_h: z.number().int().positive().optional(),
   // Custom-event fields

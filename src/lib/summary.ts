@@ -33,30 +33,40 @@ export async function computeSummary(
   let bounceWeighted = 0
   let durationWeighted = 0
 
-  if (rollupBounds) {
-    const rows = await db
-      .select()
-      .from(dailySummary)
-      .where(
-        and(
-          eq(dailySummary.siteId, site.id),
-          gte(dailySummary.date, rollupBounds.from),
-          lte(dailySummary.date, rollupBounds.to),
-        ),
-      )
-    for (const r of rows) {
-      visitors += r.visitors
-      visitsTotal += r.visits
-      pageviewsTotal += r.pageviews
-      bounceWeighted += r.bounceRate * r.visits
-      durationWeighted += r.avgDurationSeconds * r.visits
-    }
+  // The rollup query and the "today" raw query don't depend on each
+  // other — fire both at once instead of paying for two sequential D1
+  // round-trips.
+  const [rollupRows, today] = await Promise.all([
+    rollupBounds
+      ? db
+          .select()
+          .from(dailySummary)
+          .where(
+            and(
+              eq(dailySummary.siteId, site.id),
+              gte(dailySummary.date, rollupBounds.from),
+              lte(dailySummary.date, rollupBounds.to),
+            ),
+          )
+      : Promise.resolve([]),
+    includesToday
+      ? computeRawStats(
+          site.id,
+          Math.floor(startOfDayUtcMs(resolved.today, site.timezone) / 1000),
+          Math.floor(Date.now() / 1000),
+        )
+      : Promise.resolve(null),
+  ])
+
+  for (const r of rollupRows) {
+    visitors += r.visitors
+    visitsTotal += r.visits
+    pageviewsTotal += r.pageviews
+    bounceWeighted += r.bounceRate * r.visits
+    durationWeighted += r.avgDurationSeconds * r.visits
   }
 
-  if (includesToday) {
-    const startSec = Math.floor(startOfDayUtcMs(resolved.today, site.timezone) / 1000)
-    const endSec = Math.floor(Date.now() / 1000)
-    const today = await computeRawStats(site.id, startSec, endSec)
+  if (today) {
     visitors += today.visitors
     visitsTotal += today.visits
     pageviewsTotal += today.pageviews

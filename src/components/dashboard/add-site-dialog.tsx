@@ -1,20 +1,36 @@
 import { Button } from "@cloudflare/kumo/components/button"
 import { Dialog } from "@cloudflare/kumo/components/dialog"
 import { Input } from "@cloudflare/kumo/components/input"
-import { PlusIcon } from "@phosphor-icons/react"
 import { useState } from "react"
+import { z } from "zod"
+
+const createdSiteSchema = z.object({ id: z.string() })
 
 interface AddSiteDialogProps {
   onCreated: (siteId: string) => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  showTrigger?: boolean
 }
 
-export function AddSiteDialog({ onCreated }: AddSiteDialogProps) {
-  const [open, setOpen] = useState(false)
+export function AddSiteDialog({
+  onCreated,
+  open,
+  onOpenChange,
+  showTrigger = true,
+}: AddSiteDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
   const [name, setName] = useState("")
   const [domain, setDomain] = useState("")
   const [timezone, setTimezone] = useState("UTC")
   const [error, setError] = useState<string | null>(null)
   const [isPending, setIsPending] = useState(false)
+  const dialogOpen = open ?? internalOpen
+
+  function setOpen(nextOpen: boolean) {
+    setInternalOpen(nextOpen)
+    onOpenChange?.(nextOpen)
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -32,7 +48,7 @@ export function AddSiteDialog({ onCreated }: AddSiteDialogProps) {
         } | null
         throw new Error(body?.error ?? `Request failed: ${res.status}`)
       }
-      const created = (await res.json()) as { id: string }
+      const created = createdSiteSchema.parse(await res.json())
       setOpen(false)
       setName("")
       setDomain("")
@@ -46,19 +62,16 @@ export function AddSiteDialog({ onCreated }: AddSiteDialogProps) {
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger
-        render={(triggerProps) => (
-          <Button
-            {...triggerProps}
-            variant="primary"
-            icon={PlusIcon}
-            size="sm"
-            shape="circle"
-            aria-label="Add site"
-          />
-        )}
-      />
+    <Dialog.Root open={dialogOpen} onOpenChange={setOpen}>
+      {showTrigger ? (
+        <Dialog.Trigger
+          render={(triggerProps) => (
+            <Button {...triggerProps} variant="primary">
+              Add a site
+            </Button>
+          )}
+        />
+      ) : null}
       <Dialog className="p-4">
         <Dialog.Title className="mb-4 text-lg font-semibold">
           Add a site

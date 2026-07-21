@@ -1,8 +1,8 @@
 import { and, eq } from "drizzle-orm"
-import { db } from "@/db"
-import { devices, locations, sources } from "@/db/schema"
 import type { GeoInfo } from "@/lib/geo"
 import type { ParsedUserAgent } from "@/lib/ua"
+import { db } from "@/db"
+import { devices, locations, sources } from "@/db/schema"
 
 export interface ParsedReferrer {
   referrerDomain: string
@@ -11,31 +11,50 @@ export interface ParsedReferrer {
   utmCampaign: string | null
 }
 
-/** Extracts referrer domain + UTM params for the `sources` lookup table. */
+export interface CampaignParams {
+  utmSource?: string | null
+  utmMedium?: string | null
+  utmCampaign?: string | null
+}
+
+/** Extracts the external referrer domain and combines it with landing-page UTMs. */
 export function parseReferrer(
   referrer: string | null,
   siteHostname: string,
+  campaign: CampaignParams = {}
 ): ParsedReferrer {
   let referrerDomain = "(direct)"
-  let utmSource: string | null = null
-  let utmMedium: string | null = null
-  let utmCampaign: string | null = null
+  const siteDomain = normalizeHostname(siteHostname)
 
   if (referrer) {
-    try {
-      const refUrl = new URL(referrer)
-      utmSource = refUrl.searchParams.get("utm_source")
-      utmMedium = refUrl.searchParams.get("utm_medium")
-      utmCampaign = refUrl.searchParams.get("utm_campaign")
-      if (refUrl.hostname && refUrl.hostname !== siteHostname) {
-        referrerDomain = refUrl.hostname.replace(/^www\./, "")
-      }
-    } catch {
-      // malformed referrer — treat as direct
+    const referrerHost = normalizeHostname(referrer)
+    if (referrerHost && referrerHost !== siteDomain) {
+      referrerDomain = referrerHost
     }
   }
 
-  return { referrerDomain, utmSource, utmMedium, utmCampaign }
+  return {
+    referrerDomain,
+    utmSource: normalizeCampaignValue(campaign.utmSource),
+    utmMedium: normalizeCampaignValue(campaign.utmMedium),
+    utmCampaign: normalizeCampaignValue(campaign.utmCampaign),
+  }
+}
+
+function normalizeHostname(value: string): string | null {
+  try {
+    const url = new URL(value.includes("://") ? value : `https://${value}`)
+    return url.hostname.toLowerCase().replace(/^www\./, "") || null
+  } catch {
+    return null
+  }
+}
+
+function normalizeCampaignValue(
+  value: string | null | undefined
+): string | null {
+  const normalized = value?.trim()
+  return normalized ? normalized : null
 }
 
 /**
@@ -48,7 +67,7 @@ export function parseReferrer(
  */
 export async function resolveSourceId(
   siteId: string,
-  referrer: ParsedReferrer,
+  referrer: ParsedReferrer
 ): Promise<number> {
   const utmSource = referrer.utmSource ?? ""
   const utmMedium = referrer.utmMedium ?? ""
@@ -74,16 +93,16 @@ export async function resolveSourceId(
         eq(sources.referrerDomain, referrer.referrerDomain),
         eq(sources.utmSource, utmSource),
         eq(sources.utmMedium, utmMedium),
-        eq(sources.utmCampaign, utmCampaign),
-      ),
+        eq(sources.utmCampaign, utmCampaign)
+      )
     )
     .limit(1)
 
-  return row!.id
+  return row.id
 }
 
 export async function resolveDeviceId(
-  parsed: ParsedUserAgent,
+  parsed: ParsedUserAgent
 ): Promise<number> {
   await db
     .insert(devices)
@@ -101,12 +120,12 @@ export async function resolveDeviceId(
       and(
         eq(devices.browser, parsed.browser),
         eq(devices.os, parsed.os),
-        eq(devices.deviceType, parsed.deviceType),
-      ),
+        eq(devices.deviceType, parsed.deviceType)
+      )
     )
     .limit(1)
 
-  return row!.id
+  return row.id
 }
 
 export async function resolveLocationId(geo: GeoInfo): Promise<number> {
@@ -125,10 +144,10 @@ export async function resolveLocationId(geo: GeoInfo): Promise<number> {
       and(
         eq(locations.country, geo.country),
         eq(locations.region, region),
-        eq(locations.city, city),
-      ),
+        eq(locations.city, city)
+      )
     )
     .limit(1)
 
-  return row!.id
+  return row.id
 }

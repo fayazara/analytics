@@ -1,24 +1,23 @@
 import { Badge } from "@cloudflare/kumo/components/badge"
+import { Button } from "@cloudflare/kumo/components/button"
 import {
   ChartLegend,
   ChartPalette,
   TimeseriesChart,
 } from "@cloudflare/kumo/components/chart"
 import { Empty } from "@cloudflare/kumo/components/empty"
+import { DropdownMenu } from "@cloudflare/kumo/components/dropdown"
 import { LayerCard } from "@cloudflare/kumo/components/layer-card"
-import { Select } from "@cloudflare/kumo/components/select"
-import { Text } from "@cloudflare/kumo/components/text"
-import { ChartLineIcon } from "@phosphor-icons/react"
+import { CaretDownIcon, CodeIcon } from "@phosphor-icons/react"
+import { ChartBarIcon } from "@phosphor-icons/react/dist/ssr"
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
-import { asc } from "drizzle-orm"
 import { useEffect, useMemo, useState } from "react"
 import { z } from "zod"
 import { AddSiteDialog } from "@/components/dashboard/add-site-dialog"
 import { CountryFlag, SourceIcon } from "@/components/dashboard/icons"
+import { InstallScriptDialog } from "@/components/dashboard/install-script-dialog"
 import { RankedList } from "@/components/dashboard/ranked-list"
-import { db } from "@/db"
-import { sites } from "@/db/schema"
 import { useLiveVisitorCount } from "@/hooks/use-live-visitors"
 import { echarts } from "@/lib/echarts"
 import {
@@ -27,14 +26,15 @@ import {
   formatPercent,
 } from "@/lib/format"
 
-/** Server function — the dashboard's own UI reads the site list this way. */
-const getSites = createServerFn().handler(async () => {
-  return await db.select().from(sites).orderBy(asc(sites.name)).all()
+/** Server function — the dashboard's own UI reads its initial data this way. */
+const getDashboardData = createServerFn().handler(async () => {
+  const { loadDashboardData } = await import("@/lib/dashboard-data")
+  return await loadDashboardData()
 })
 
 type UiRangeKey = "today" | "7d" | "30d" | "6m" | "1y"
 
-const RANGE_OPTIONS: { value: UiRangeKey; label: string }[] = [
+const RANGE_OPTIONS: Array<{ value: UiRangeKey; label: string }> = [
   { value: "today", label: "Today" },
   { value: "7d", label: "Last 7 days" },
   { value: "30d", label: "Last 30 days" },
@@ -49,7 +49,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/")({
   validateSearch: searchSchema,
-  loader: () => getSites(),
+  loader: () => getDashboardData(),
   component: App,
 })
 
@@ -100,11 +100,11 @@ interface TopEventRow {
 async function fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal })
   if (!res.ok) throw new Error(`Request failed: ${res.status}`)
-  return (await res.json()) as T
+  return await res.json()
 }
 
 function App() {
-  const allSites = Route.useLoaderData()
+  const { sites: allSites, trackerOrigin } = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = useNavigate()
   const router = useRouter()
@@ -116,13 +116,15 @@ function App() {
   const range = search.range ?? "30d"
 
   const [summary, setSummary] = useState<SummaryResponse | null>(null)
-  const [points, setPoints] = useState<TimeseriesPoint[]>([])
-  const [pageRows, setPageRows] = useState<TopPageRow[]>([])
-  const [sourceRows, setSourceRows] = useState<TopSourceRow[]>([])
-  const [deviceRows, setDeviceRows] = useState<TopDeviceRow[]>([])
-  const [locationRows, setLocationRows] = useState<TopLocationRow[]>([])
-  const [eventRows, setEventRows] = useState<TopEventRow[]>([])
+  const [points, setPoints] = useState<Array<TimeseriesPoint>>([])
+  const [pageRows, setPageRows] = useState<Array<TopPageRow>>([])
+  const [sourceRows, setSourceRows] = useState<Array<TopSourceRow>>([])
+  const [deviceRows, setDeviceRows] = useState<Array<TopDeviceRow>>([])
+  const [locationRows, setLocationRows] = useState<Array<TopLocationRow>>([])
+  const [eventRows, setEventRows] = useState<Array<TopEventRow>>([])
   const [loading, setLoading] = useState(false)
+  const [addSiteOpen, setAddSiteOpen] = useState(false)
+  const [installSiteId, setInstallSiteId] = useState<string | null>(null)
 
   const liveCount = useLiveVisitorCount(selectedSiteId)
 
@@ -137,27 +139,27 @@ function App() {
         `${base}/summary?range=${range}`,
         controller.signal
       ),
-      fetchJson<{ points: TimeseriesPoint[] }>(
+      fetchJson<{ points: Array<TimeseriesPoint> }>(
         `${base}/timeseries?range=${range}`,
         controller.signal
       ),
-      fetchJson<{ rows: TopPageRow[] }>(
+      fetchJson<{ rows: Array<TopPageRow> }>(
         `${base}/pages?range=${range}`,
         controller.signal
       ),
-      fetchJson<{ rows: TopSourceRow[] }>(
+      fetchJson<{ rows: Array<TopSourceRow> }>(
         `${base}/sources?range=${range}`,
         controller.signal
       ),
-      fetchJson<{ rows: TopDeviceRow[] }>(
+      fetchJson<{ rows: Array<TopDeviceRow> }>(
         `${base}/devices?range=${range}`,
         controller.signal
       ),
-      fetchJson<{ rows: TopLocationRow[] }>(
+      fetchJson<{ rows: Array<TopLocationRow> }>(
         `${base}/locations?range=${range}`,
         controller.signal
       ),
-      fetchJson<{ rows: TopEventRow[] }>(
+      fetchJson<{ rows: Array<TopEventRow> }>(
         `${base}/events?range=${range}`,
         controller.signal
       ),
@@ -199,6 +201,7 @@ function App() {
   async function handleSiteCreated(id: string) {
     await router.invalidate()
     selectSite(id)
+    setInstallSiteId(id)
   }
 
   const chartData = useMemo(
@@ -221,26 +224,63 @@ function App() {
     return (
       <div className="flex min-h-svh items-center justify-center p-6">
         <Empty
-          icon={<ChartLineIcon size={40} />}
-          title="No sites yet"
-          description="Add your first site to start tracking pageviews, sources, and events."
+          icon={<ChartBarIcon weight="duotone" size={32} />}
+          title="Add a site to start tracking"
           contents={<AddSiteDialog onCreated={handleSiteCreated} />}
+          className="max-w-sm [h2]:text-sm"
         />
       </div>
     )
   }
 
   const selectedSite =
-    allSites.find((s) => s.id === selectedSiteId) ?? allSites[0]!
+    allSites.find((s) => s.id === selectedSiteId) ?? allSites[0]
+  const installSite =
+    allSites.find((site) => site.id === installSiteId) ?? selectedSite
+  const rangeLabel =
+    RANGE_OPTIONS.find((option) => option.value === range)?.label ?? range
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <SourceIcon domain={selectedSite.domain} />
-          <Text variant="heading3" as="span" truncate>
-            {selectedSite.name}
-          </Text>
+          <DropdownMenu>
+            <DropdownMenu.Trigger
+              render={
+                <Button
+                  variant="ghost"
+                  className="-ml-2 max-w-full min-w-0 justify-start px-2"
+                  aria-label={`Switch site. Current site: ${selectedSite.name}`}
+                >
+                  <SourceIcon domain={selectedSite.domain} />
+                  <p className="max-w-52 shrink-0 font-semibold">
+                    {selectedSite.name}
+                  </p>
+                  <CaretDownIcon
+                    className="size-4 shrink-0 text-neutral-500"
+                    weight="bold"
+                  />
+                </Button>
+              }
+            />
+            <DropdownMenu.Content align="start" className="t-dropdown min-w-56">
+              {allSites.map((site) => (
+                <DropdownMenu.Item
+                  key={site.id}
+                  icon={<SourceIcon domain={site.domain} />}
+                  selected={site.id === selectedSiteId}
+                  className="gap-2 [&>span:last-child]:ml-auto"
+                  onClick={() => selectSite(site.id)}
+                >
+                  {site.name}
+                </DropdownMenu.Item>
+              ))}
+              <DropdownMenu.Separator />
+              <DropdownMenu.Item onClick={() => setAddSiteOpen(true)}>
+                Add site
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu>
           {liveCount !== null && liveCount > 0 ? (
             <Badge variant="success" appearance="dot">
               {liveCount} online
@@ -248,38 +288,57 @@ function App() {
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
-            size="sm"
-            value={selectedSiteId}
-            onValueChange={(v) => v && selectSite(v)}
-            renderValue={() => selectedSite.name}
-            aria-label="Site"
-          >
-            {allSites.map((s) => (
-              <Select.Option key={s.id} value={s.id}>
-                {s.name}
-              </Select.Option>
-            ))}
-          </Select>
-          <Select
-            size="sm"
-            value={range}
-            onValueChange={(v) => v && selectRange(v as UiRangeKey)}
-            renderValue={(v) =>
-              RANGE_OPTIONS.find((o) => o.value === v)?.label ?? v
-            }
-            aria-label="Date range"
-          >
-            {RANGE_OPTIONS.map((o) => (
-              <Select.Option key={o.value} value={o.value}>
-                {o.label}
-              </Select.Option>
-            ))}
-          </Select>
-          <AddSiteDialog onCreated={handleSiteCreated} />
+        <div className="flex flex-wrap items-center gap-1">
+          <Button
+            variant="ghost"
+            icon={<CodeIcon weight="bold" className="text-neutral-800" />}
+            onClick={() => setInstallSiteId(selectedSite.id)}
+            aria-label="Install script"
+          />
+          <DropdownMenu>
+            <DropdownMenu.Trigger
+              render={
+                <Button variant="ghost" aria-label="Select date range">
+                  {rangeLabel}
+                  <CaretDownIcon
+                    className="size-4 text-neutral-500"
+                    weight="bold"
+                  />
+                </Button>
+              }
+            />
+            <DropdownMenu.Content
+              align="end"
+              className="t-dropdown t-dropdown-origin-top-right min-w-44"
+            >
+              {RANGE_OPTIONS.map((option) => (
+                <DropdownMenu.Item
+                  key={option.value}
+                  selected={option.value === range}
+                  className="[&>span:last-child]:ml-auto"
+                  onClick={() => selectRange(option.value)}
+                >
+                  {option.label}
+                </DropdownMenu.Item>
+              ))}
+            </DropdownMenu.Content>
+          </DropdownMenu>
         </div>
       </header>
+
+      <AddSiteDialog
+        open={addSiteOpen}
+        onOpenChange={setAddSiteOpen}
+        showTrigger={false}
+        onCreated={handleSiteCreated}
+      />
+      <InstallScriptDialog
+        open={installSiteId !== null}
+        onOpenChange={(open) => !open && setInstallSiteId(null)}
+        siteId={installSite.id}
+        siteName={installSite.name}
+        trackerOrigin={trackerOrigin}
+      />
 
       <LayerCard>
         <LayerCard.Secondary>Overview</LayerCard.Secondary>

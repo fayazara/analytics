@@ -8,17 +8,28 @@
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "analytics.fayazahmed.com",
+      "custom_domain": true
+    }
+  ],
   "observability": {
     "enabled": true
   },
   "upload_source_maps": true,
+  "vars": {
+    "TRACKER_ORIGIN": "https://analytics.fayazahmed.com"
+  },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "web-analytics-db",
-      // Run `npx wrangler d1 create web-analytics-db` and paste the
-      // printed database_id here before deploying.
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "22cbc435-c93f-4f2d-b3da-2dec61736110",
+      // Preserve the original local D1 identity that contains demo data.
+      "preview_database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
       "migrations_dir": "drizzle"
     }
   ],

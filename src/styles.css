@@ -2,8 +2,78 @@
 @import "@cloudflare/kumo/styles/tailwind";
 @import "tailwindcss";
 
+:root {
+  --dropdown-open-dur: 250ms;
+  --dropdown-close-dur: 150ms;
+  --dropdown-pre-scale: 0.97;
+  --dropdown-closing-scale: 0.99;
+  --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 * {
   scrollbar-color: var(--ui-bg-accented) transparent;
   scrollbar-width: thin;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Transitions.dev-inspired motion adapted to Kumo's data-state lifecycle. */
+.t-dropdown {
+  animation: none !important;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(var(--dropdown-pre-scale));
+  transform-origin: top left;
+  will-change: transform, opacity;
+}
+
+.t-dropdown-origin-top-right {
+  transform-origin: top right;
+}
+
+.t-dropdown[data-open] {
+  animation: t-dropdown-open var(--dropdown-open-dur) var(--dropdown-ease)
+    both !important;
+  pointer-events: auto;
+}
+
+@keyframes t-dropdown-open {
+  from {
+    opacity: 0;
+    transform: scale(var(--dropdown-pre-scale));
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.t-dropdown[data-closed] {
+  animation: t-dropdown-close var(--dropdown-close-dur) var(--dropdown-ease)
+    both !important;
+  pointer-events: none;
+}
+
+@keyframes t-dropdown-close {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(var(--dropdown-closing-scale));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-dropdown {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .t-dropdown[data-open] {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

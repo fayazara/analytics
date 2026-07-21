@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { env, waitUntil } from "cloudflare:workers"
 import { desc, eq } from "drizzle-orm"
+import type { CollectRequest } from "@/lib/collect-schema"
+import type { GeoInfo } from "@/lib/geo"
 import { db } from "@/db"
 import { events, pages, sites, visitors, visits } from "@/db/schema"
-import {
-  type CollectRequest,
-  collectRequestSchema,
-} from "@/lib/collect-schema"
-import { extractGeo, type GeoInfo } from "@/lib/geo"
+import { collectRequestSchema } from "@/lib/collect-schema"
+import { extractGeo } from "@/lib/geo"
 import {
   parseReferrer,
   resolveDeviceId,
@@ -23,6 +22,8 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 }
+
+const MAX_COLLECT_BODY_BYTES = 16 * 1024
 
 /**
  * `POST /collect` — the only public route (§8, §10). Called by the
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/collect")({
           const now = Date.now()
 
           waitUntil(
-            processCollectRequest(parsed.data, { ip, userAgent, geo, now }),
+            processCollectRequest(parsed.data, { ip, userAgent, geo, now })
           )
         }
 
@@ -55,7 +56,7 @@ export const Route = createFileRoute("/collect")({
         return new Response(null, { status: 204, headers: CORS_HEADERS })
       },
 
-      OPTIONS: async () => new Response(null, { status: 204, headers: CORS_HEADERS }),
+      OPTIONS: () => new Response(null, { status: 204, headers: CORS_HEADERS }),
     },
   },
 })
@@ -64,7 +65,32 @@ async function readBody(request: Request): Promise<unknown> {
   // `navigator.sendBeacon` sends `Content-Type: text/plain`, so we read as
   // text and parse ourselves rather than relying on `request.json()`.
   try {
-    const text = await request.text()
+    const contentLength = request.headers.get("Content-Length")
+    if (contentLength && Number(contentLength) > MAX_COLLECT_BODY_BYTES) {
+      return null
+    }
+
+    if (!request.body) return null
+
+    const reader = request.body.getReader()
+    const decoder = new TextDecoder()
+    let totalBytes = 0
+    let text = ""
+
+    let chunk = await reader.read()
+    while (!chunk.done) {
+      const { value } = chunk
+      totalBytes += value.byteLength
+      if (totalBytes > MAX_COLLECT_BODY_BYTES) {
+        await reader.cancel()
+        return null
+      }
+
+      text += decoder.decode(value, { stream: true })
+      chunk = await reader.read()
+    }
+
+    text += decoder.decode()
     return text ? JSON.parse(text) : null
   } catch {
     return null
@@ -80,13 +106,14 @@ interface CollectContext {
 
 async function processCollectRequest(
   data: CollectRequest,
-  ctx: CollectContext,
+  ctx: CollectContext
 ): Promise<void> {
-  const [site] = await db
+  const site = await db
     .select()
     .from(sites)
     .where(eq(sites.id, data.site_id))
     .limit(1)
+    .get()
   if (!site) return // unknown site_id — drop silently
 
   const visitorId = await computeVisitorId(site.id, ctx.ip, ctx.userAgent)
@@ -114,12 +141,16 @@ async function handlePageview(
   visitorId: string,
   data: CollectRequest,
   ctx: CollectContext,
-  nowSec: number,
+  nowSec: number
 ): Promise<void> {
   if (!data.path) return
 
   const parsedUa = parseUserAgent(ctx.userAgent)
-  const referrer = parseReferrer(data.referrer ?? null, site.domain)
+  const referrer = parseReferrer(data.referrer ?? null, site.domain, {
+    utmSource: data.utm_source,
+    utmMedium: data.utm_medium,
+    utmCampaign: data.utm_campaign,
+  })
 
   const [sourceId, deviceId, locationId] = await Promise.all([
     resolveSourceId(site.id, referrer),
@@ -148,26 +179,32 @@ async function handlePageview(
   // Fire-and-forget ping to the site's LiveVisitors DO (§11). Never let a
   // DO hiccup affect ingestion.
   const stub = env.LIVE_VISITORS.getByName(site.id)
-  waitUntil(stub.ping(visitorId).then(() => undefined, () => undefined))
+  waitUntil(
+    stub.ping(visitorId).then(
+      () => undefined,
+      () => undefined
+    )
+  )
 }
 
 async function handleEvent(
   siteId: string,
   visitorId: string,
   data: CollectRequest,
-  nowSec: number,
+  nowSec: number
 ): Promise<void> {
   if (!data.name) return
 
   // Custom events attach to the visitor's current visit. If there isn't
   // one yet (e.g. an event fires before any pageview), drop it — events
   // are meaningless without a visit context.
-  const [visit] = await db
+  const visit = await db
     .select({ id: visits.id })
     .from(visits)
     .where(eq(visits.visitorId, visitorId))
     .orderBy(desc(visits.startedAt))
     .limit(1)
+    .get()
   if (!visit) return
 
   await db.insert(events).values({
