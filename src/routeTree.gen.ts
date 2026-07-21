@@ -18,8 +18,8 @@ import { Route as ApiSitesSiteIdSummaryRouteImport } from './routes/api/sites.$s
 import { Route as ApiSitesSiteIdSourcesRouteImport } from './routes/api/sites.$siteId.sources'
 import { Route as ApiSitesSiteIdPagesRouteImport } from './routes/api/sites.$siteId.pages'
 import { Route as ApiSitesSiteIdLocationsRouteImport } from './routes/api/sites.$siteId.locations'
-import { Route as ApiSitesSiteIdEventsRouteImport } from './routes/api/sites.$siteId.events'
 import { Route as ApiSitesSiteIdDevicesRouteImport } from './routes/api/sites.$siteId.devices'
+import { Route as ApiSitesSiteIdActivityRouteImport } from './routes/api/sites.$siteId.activity'
 import { Route as ApiSitesSiteIdRealtimeWsRouteImport } from './routes/api/sites.$siteId.realtime.ws'
 
 const CollectRoute = CollectRouteImport.update({
@@ -68,14 +68,14 @@ const ApiSitesSiteIdLocationsRoute = ApiSitesSiteIdLocationsRouteImport.update({
   path: '/locations',
   getParentRoute: () => ApiSitesSiteIdRoute,
 } as any)
-const ApiSitesSiteIdEventsRoute = ApiSitesSiteIdEventsRouteImport.update({
-  id: '/events',
-  path: '/events',
-  getParentRoute: () => ApiSitesSiteIdRoute,
-} as any)
 const ApiSitesSiteIdDevicesRoute = ApiSitesSiteIdDevicesRouteImport.update({
   id: '/devices',
   path: '/devices',
+  getParentRoute: () => ApiSitesSiteIdRoute,
+} as any)
+const ApiSitesSiteIdActivityRoute = ApiSitesSiteIdActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => ApiSitesSiteIdRoute,
 } as any)
 const ApiSitesSiteIdRealtimeWsRoute =
@@ -90,8 +90,8 @@ export interface FileRoutesByFullPath {
   '/collect': typeof CollectRoute
   '/api/sites': typeof ApiSitesRouteWithChildren
   '/api/sites/$siteId': typeof ApiSitesSiteIdRouteWithChildren
+  '/api/sites/$siteId/activity': typeof ApiSitesSiteIdActivityRoute
   '/api/sites/$siteId/devices': typeof ApiSitesSiteIdDevicesRoute
-  '/api/sites/$siteId/events': typeof ApiSitesSiteIdEventsRoute
   '/api/sites/$siteId/locations': typeof ApiSitesSiteIdLocationsRoute
   '/api/sites/$siteId/pages': typeof ApiSitesSiteIdPagesRoute
   '/api/sites/$siteId/sources': typeof ApiSitesSiteIdSourcesRoute
@@ -104,8 +104,8 @@ export interface FileRoutesByTo {
   '/collect': typeof CollectRoute
   '/api/sites': typeof ApiSitesRouteWithChildren
   '/api/sites/$siteId': typeof ApiSitesSiteIdRouteWithChildren
+  '/api/sites/$siteId/activity': typeof ApiSitesSiteIdActivityRoute
   '/api/sites/$siteId/devices': typeof ApiSitesSiteIdDevicesRoute
-  '/api/sites/$siteId/events': typeof ApiSitesSiteIdEventsRoute
   '/api/sites/$siteId/locations': typeof ApiSitesSiteIdLocationsRoute
   '/api/sites/$siteId/pages': typeof ApiSitesSiteIdPagesRoute
   '/api/sites/$siteId/sources': typeof ApiSitesSiteIdSourcesRoute
@@ -119,8 +119,8 @@ export interface FileRoutesById {
   '/collect': typeof CollectRoute
   '/api/sites': typeof ApiSitesRouteWithChildren
   '/api/sites/$siteId': typeof ApiSitesSiteIdRouteWithChildren
+  '/api/sites/$siteId/activity': typeof ApiSitesSiteIdActivityRoute
   '/api/sites/$siteId/devices': typeof ApiSitesSiteIdDevicesRoute
-  '/api/sites/$siteId/events': typeof ApiSitesSiteIdEventsRoute
   '/api/sites/$siteId/locations': typeof ApiSitesSiteIdLocationsRoute
   '/api/sites/$siteId/pages': typeof ApiSitesSiteIdPagesRoute
   '/api/sites/$siteId/sources': typeof ApiSitesSiteIdSourcesRoute
@@ -135,8 +135,8 @@ export interface FileRouteTypes {
     | '/collect'
     | '/api/sites'
     | '/api/sites/$siteId'
+    | '/api/sites/$siteId/activity'
     | '/api/sites/$siteId/devices'
-    | '/api/sites/$siteId/events'
     | '/api/sites/$siteId/locations'
     | '/api/sites/$siteId/pages'
     | '/api/sites/$siteId/sources'
@@ -149,8 +149,8 @@ export interface FileRouteTypes {
     | '/collect'
     | '/api/sites'
     | '/api/sites/$siteId'
+    | '/api/sites/$siteId/activity'
     | '/api/sites/$siteId/devices'
-    | '/api/sites/$siteId/events'
     | '/api/sites/$siteId/locations'
     | '/api/sites/$siteId/pages'
     | '/api/sites/$siteId/sources'
@@ -163,8 +163,8 @@ export interface FileRouteTypes {
     | '/collect'
     | '/api/sites'
     | '/api/sites/$siteId'
+    | '/api/sites/$siteId/activity'
     | '/api/sites/$siteId/devices'
-    | '/api/sites/$siteId/events'
     | '/api/sites/$siteId/locations'
     | '/api/sites/$siteId/pages'
     | '/api/sites/$siteId/sources'
@@ -244,18 +244,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSitesSiteIdLocationsRouteImport
       parentRoute: typeof ApiSitesSiteIdRoute
     }
-    '/api/sites/$siteId/events': {
-      id: '/api/sites/$siteId/events'
-      path: '/events'
-      fullPath: '/api/sites/$siteId/events'
-      preLoaderRoute: typeof ApiSitesSiteIdEventsRouteImport
-      parentRoute: typeof ApiSitesSiteIdRoute
-    }
     '/api/sites/$siteId/devices': {
       id: '/api/sites/$siteId/devices'
       path: '/devices'
       fullPath: '/api/sites/$siteId/devices'
       preLoaderRoute: typeof ApiSitesSiteIdDevicesRouteImport
+      parentRoute: typeof ApiSitesSiteIdRoute
+    }
+    '/api/sites/$siteId/activity': {
+      id: '/api/sites/$siteId/activity'
+      path: '/activity'
+      fullPath: '/api/sites/$siteId/activity'
+      preLoaderRoute: typeof ApiSitesSiteIdActivityRouteImport
       parentRoute: typeof ApiSitesSiteIdRoute
     }
     '/api/sites/$siteId/realtime/ws': {
@@ -269,8 +269,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface ApiSitesSiteIdRouteChildren {
+  ApiSitesSiteIdActivityRoute: typeof ApiSitesSiteIdActivityRoute
   ApiSitesSiteIdDevicesRoute: typeof ApiSitesSiteIdDevicesRoute
-  ApiSitesSiteIdEventsRoute: typeof ApiSitesSiteIdEventsRoute
   ApiSitesSiteIdLocationsRoute: typeof ApiSitesSiteIdLocationsRoute
   ApiSitesSiteIdPagesRoute: typeof ApiSitesSiteIdPagesRoute
   ApiSitesSiteIdSourcesRoute: typeof ApiSitesSiteIdSourcesRoute
@@ -280,8 +280,8 @@ interface ApiSitesSiteIdRouteChildren {
 }
 
 const ApiSitesSiteIdRouteChildren: ApiSitesSiteIdRouteChildren = {
+  ApiSitesSiteIdActivityRoute: ApiSitesSiteIdActivityRoute,
   ApiSitesSiteIdDevicesRoute: ApiSitesSiteIdDevicesRoute,
-  ApiSitesSiteIdEventsRoute: ApiSitesSiteIdEventsRoute,
   ApiSitesSiteIdLocationsRoute: ApiSitesSiteIdLocationsRoute,
   ApiSitesSiteIdPagesRoute: ApiSitesSiteIdPagesRoute,
   ApiSitesSiteIdSourcesRoute: ApiSitesSiteIdSourcesRoute,

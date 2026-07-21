@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { resolveSiteAndRange } from "@/lib/api-context"
 import { computeTopEvents } from "@/lib/top-lists"
 
-export const Route = createFileRoute("/api/sites/$siteId/events")({
+export const Route = createFileRoute("/api/sites/$siteId/activity")({
   server: {
     handlers: {
       GET: async ({ request, params }) => {

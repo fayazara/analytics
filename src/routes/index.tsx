@@ -160,7 +160,7 @@ function App() {
         controller.signal
       ),
       fetchJson<{ rows: Array<TopEventRow> }>(
-        `${base}/events?range=${range}`,
+        `${base}/activity?range=${range}`,
         controller.signal
       ),
     ])
