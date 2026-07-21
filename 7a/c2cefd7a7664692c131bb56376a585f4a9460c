@@ -1,0 +1,23 @@
+src/components/dashboard/delete-site-dialog.tsx
+  s_0f884d7285d35f::t_7e5bd79668e585 1-61
+src/routes/api/sites.$siteId.ts
+  s_0f884d7285d35f::t_2bb89b0cf08085 2,11,16,22-49
+src/routes/index.tsx
+  s_0f884d7285d35f::t_1d6e58e3842f5e 11-16,23-32,103-136,175,256-266,300-301,344-351,412-418,501
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7ac2cefd7a7664692c131bb56376a585f4a9460c",
+  "prompts": {},
+  "sessions": {
+    "s_0f884d7285d35f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f82a0-b6f5-7720-b0b8-d624dd502d49",
+        "model": "unknown"
+      },
+      "human_author": "Fayaz Ahmed <fayazara@gmail.com>"
+    }
+  }
+}
