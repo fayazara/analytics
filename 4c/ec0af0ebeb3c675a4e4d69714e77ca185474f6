@@ -1,0 +1,35 @@
+src/lib/lookups.ts
+  s_0f884d7285d35f::t_ce1464e5afcce2 4-5,14-20,24,27,30-32,36-57,70,96-97,101,105,123-124,128,147-148,152
+worker-configuration.d.ts
+  s_0f884d7285d35f::t_502b98eb2381f9 2,6-7,10-13,17-22
+README.md
+  s_0f884d7285d35f::t_9bf825abe4a1b3 1,3-8,10-12,21-22,24,32-139,143-154,160-162,164-181,184-185,187-196,199,202,204-215
+public/script.js
+  s_0f884d7285d35f::t_1c63226920e9f1 5,29-30,32,46-54,56-59,63-64,68-78,104-107
+src/components/dashboard/add-site-dialog.tsx
+  s_0f884d7285d35f::t_8a49a59891a3f8 5-7,11-13,16-22,28-33,51,65-74
+src/lib/collect-schema.ts
+  s_0f884d7285d35f::t_6ddfa80d76704e 13-15
+src/lib/dashboard-data.ts
+  s_0f884d7285d35f::t_cb51a1ddfd60b3 1-11
+src/routes/collect.ts
+  s_0f884d7285d35f::t_aa2b0660509ea8 4-5,8-9,26-27,50,59,68-93,109,111,116,144,149-153,182-187,194,201,207
+wrangler.jsonc
+  s_0f884d7285d35f::t_a3b445e93ccd96 11-18,23-25,30-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4cec0af0ebeb3c675a4e4d69714e77ca185474f6",
+  "prompts": {},
+  "sessions": {
+    "s_0f884d7285d35f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f82a0-b6f5-7720-b0b8-d624dd502d49",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Fayaz Ahmed <fayazara@gmail.com>"
+    }
+  }
+}
