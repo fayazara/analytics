@@ -1,0 +1,23 @@
+src/routeTree.gen.ts
+  s_0f884d7285d35f::t_f3efa5c04c1f8d 22,76-80,93,107,122,138,152,166,254-260,272,283
+src/routes/api/sites.$siteId.activity.ts
+  s_0f884d7285d35f::t_a58a837b7277de 5
+src/routes/index.tsx
+  s_0f884d7285d35f::t_bd85853b8cf0a8 163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "821684250c992362248226629cd6f154ba1a1d73",
+  "prompts": {},
+  "sessions": {
+    "s_0f884d7285d35f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f82a0-b6f5-7720-b0b8-d624dd502d49",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Fayaz Ahmed <fayazara@gmail.com>"
+    }
+  }
+}
