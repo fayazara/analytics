@@ -32,19 +32,118 @@ if (!siteId) {
 // ---------------------------------------------------------------------------
 
 const REFERRERS = [
-  { referrerDomain: "(direct)", utmSource: "", utmMedium: "", utmCampaign: "", weight: 30 },
-  { referrerDomain: "google.com", utmSource: "", utmMedium: "", utmCampaign: "", weight: 26 },
-  { referrerDomain: "github.com", utmSource: "", utmMedium: "", utmCampaign: "", weight: 9 },
-  { referrerDomain: "news.ycombinator.com", utmSource: "", utmMedium: "", utmCampaign: "", weight: 7 },
-  { referrerDomain: "t.co", utmSource: "", utmMedium: "", utmCampaign: "", weight: 5 },
-  { referrerDomain: "reddit.com", utmSource: "", utmMedium: "", utmCampaign: "", weight: 5 },
-  { referrerDomain: "producthunt.com", utmSource: "", utmMedium: "", utmCampaign: "", weight: 4 },
-  { referrerDomain: "linkedin.com", utmSource: "", utmMedium: "", utmCampaign: "", weight: 3 },
-  { referrerDomain: "bing.com", utmSource: "", utmMedium: "", utmCampaign: "", weight: 3 },
-  { referrerDomain: "dev.to", utmSource: "", utmMedium: "", utmCampaign: "", weight: 3 },
-  { referrerDomain: "facebook.com", utmSource: "", utmMedium: "", utmCampaign: "", weight: 2 },
-  { referrerDomain: "(direct)", utmSource: "newsletter", utmMedium: "email", utmCampaign: "launch", weight: 4 },
-  { referrerDomain: "twitter.com", utmSource: "twitter", utmMedium: "social", utmCampaign: "launch", weight: 3 },
+  {
+    referrerDomain: "(direct)",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 30,
+  },
+  {
+    referrerDomain: "google.com",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 26,
+  },
+  {
+    referrerDomain: "github.com",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 9,
+  },
+  {
+    referrerDomain: "news.ycombinator.com",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 7,
+  },
+  {
+    referrerDomain: "t.co",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 5,
+  },
+  {
+    referrerDomain: "reddit.com",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 5,
+  },
+  {
+    referrerDomain: "producthunt.com",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 4,
+  },
+  {
+    referrerDomain: "linkedin.com",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 3,
+  },
+  {
+    referrerDomain: "bing.com",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 3,
+  },
+  {
+    referrerDomain: "dev.to",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 3,
+  },
+  {
+    referrerDomain: "facebook.com",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    weight: 2,
+  },
+  {
+    referrerDomain: "(direct)",
+    utmSource: "newsletter",
+    utmMedium: "email",
+    utmCampaign: "weekly-digest",
+    weight: 4,
+  },
+  {
+    referrerDomain: "twitter.com",
+    utmSource: "twitter",
+    utmMedium: "social",
+    utmCampaign: "launch",
+    weight: 3,
+  },
+  {
+    referrerDomain: "linkedin.com",
+    utmSource: "linkedin",
+    utmMedium: "social",
+    utmCampaign: "product-update",
+    weight: 3,
+  },
+  {
+    referrerDomain: "google.com",
+    utmSource: "google",
+    utmMedium: "cpc",
+    utmCampaign: "summer-launch",
+    weight: 2,
+  },
+  {
+    referrerDomain: "producthunt.com",
+    utmSource: "product-hunt",
+    utmMedium: "referral",
+    utmCampaign: "launch-day",
+    weight: 2,
+  },
 ]
 
 const DEVICES = [
@@ -56,7 +155,12 @@ const DEVICES = [
   { browser: "Firefox", os: "Windows", deviceType: "desktop", weight: 6 },
   { browser: "Edge", os: "Windows", deviceType: "desktop", weight: 5 },
   { browser: "Safari", os: "iOS", deviceType: "tablet", weight: 3 },
-  { browser: "Samsung Internet", os: "Android", deviceType: "mobile", weight: 2 },
+  {
+    browser: "Samsung Internet",
+    os: "Android",
+    deviceType: "mobile",
+    weight: 2,
+  },
 ]
 
 const LOCATIONS = [
@@ -81,9 +185,17 @@ const PAGES = [
   { path: "/", title: "SuperSaaS – Ship your SaaS faster", weight: 35 },
   { path: "/pricing", title: "Pricing – SuperSaaS", weight: 15 },
   { path: "/docs", title: "Docs – SuperSaaS", weight: 12 },
-  { path: "/docs/getting-started", title: "Getting Started – SuperSaaS", weight: 10 },
+  {
+    path: "/docs/getting-started",
+    title: "Getting Started – SuperSaaS",
+    weight: 10,
+  },
   { path: "/blog", title: "Blog – SuperSaaS", weight: 8 },
-  { path: "/blog/how-we-built-supersaas", title: "How we built SuperSaaS", weight: 6 },
+  {
+    path: "/blog/how-we-built-supersaas",
+    title: "How we built SuperSaaS",
+    weight: 6,
+  },
   { path: "/changelog", title: "Changelog – SuperSaaS", weight: 5 },
   { path: "/about", title: "About – SuperSaaS", weight: 5 },
   { path: "/contact", title: "Contact – SuperSaaS", weight: 4 },
@@ -92,9 +204,21 @@ const PAGES = [
 const EVENT_RULES = [
   { name: "signup", pages: ["/pricing", "/"], chance: 0.06 },
   { name: "pricing_click", pages: ["/"], chance: 0.08 },
-  { name: "docs_search", pages: ["/docs", "/docs/getting-started"], chance: 0.12 },
+  {
+    name: "docs_search",
+    pages: ["/docs", "/docs/getting-started"],
+    chance: 0.12,
+  },
   { name: "newsletter_subscribe", pages: ["/blog", "/"], chance: 0.04 },
   { name: "cta_click", pages: ["/", "/pricing"], chance: 0.1 },
+]
+
+const OUTBOUND_LINKS = [
+  { url: "https://github.com/supersaas", weight: 35 },
+  { url: "https://docs.cloudflare.com/workers", weight: 22 },
+  { url: "https://discord.com/invite/supersaas", weight: 18 },
+  { url: "https://x.com/supersaas", weight: 15 },
+  { url: "https://status.supersaas.example", weight: 10 },
 ]
 
 const PAGE_COUNT_WEIGHTS = [1, 1, 1, 2, 2, 3, 4, 5]
@@ -144,7 +268,7 @@ function ensureSourceLookup(ref) {
   if (!sourceKeySeen.has(key)) {
     sourceKeySeen.add(key)
     lookupInserts.push(
-      `INSERT OR IGNORE INTO sources (site_id, referrer_domain, utm_source, utm_medium, utm_campaign) VALUES (${esc(siteId)}, ${esc(ref.referrerDomain)}, ${esc(ref.utmSource)}, ${esc(ref.utmMedium)}, ${esc(ref.utmCampaign)});`,
+      `INSERT OR IGNORE INTO sources (site_id, referrer_domain, utm_source, utm_medium, utm_campaign) VALUES (${esc(siteId)}, ${esc(ref.referrerDomain)}, ${esc(ref.utmSource)}, ${esc(ref.utmMedium)}, ${esc(ref.utmCampaign)});`
     )
   }
 }
@@ -154,7 +278,7 @@ function ensureDeviceLookup(dev) {
   if (!deviceKeySeen.has(key)) {
     deviceKeySeen.add(key)
     lookupInserts.push(
-      `INSERT OR IGNORE INTO devices (browser, os, device_type) VALUES (${esc(dev.browser)}, ${esc(dev.os)}, ${esc(dev.deviceType)});`,
+      `INSERT OR IGNORE INTO devices (browser, os, device_type) VALUES (${esc(dev.browser)}, ${esc(dev.os)}, ${esc(dev.deviceType)});`
     )
   }
 }
@@ -164,7 +288,7 @@ function ensureLocationLookup(loc) {
   if (!locationKeySeen.has(key)) {
     locationKeySeen.add(key)
     lookupInserts.push(
-      `INSERT OR IGNORE INTO locations (country, region, city) VALUES (${esc(loc.country)}, ${esc(loc.region)}, ${esc(loc.city)});`,
+      `INSERT OR IGNORE INTO locations (country, region, city) VALUES (${esc(loc.country)}, ${esc(loc.region)}, ${esc(loc.city)});`
     )
   }
 }
@@ -199,8 +323,10 @@ function pickVisitorId() {
 }
 
 function markVisitorSeen(id, sec) {
-  if (!visitorFirstSeen.has(id) || sec < visitorFirstSeen.get(id)) visitorFirstSeen.set(id, sec)
-  if (!visitorLastSeen.has(id) || sec > visitorLastSeen.get(id)) visitorLastSeen.set(id, sec)
+  if (!visitorFirstSeen.has(id) || sec < visitorFirstSeen.get(id))
+    visitorFirstSeen.set(id, sec)
+  if (!visitorLastSeen.has(id) || sec > visitorLastSeen.get(id))
+    visitorLastSeen.set(id, sec)
 }
 
 const now = new Date()
@@ -216,16 +342,20 @@ for (let offset = days; offset >= 1; offset--) {
   const weekdayMultiplier = dow === 0 || dow === 6 ? 0.6 : 1.0
   const growth = 1 - (offset / days) * 0.55 // ramps up towards "today"
   const jitter = 0.7 + Math.random() * 0.6
-  const visitCount = Math.max(3, Math.round(40 * growth * weekdayMultiplier * jitter))
+  const visitCount = Math.max(
+    3,
+    Math.round(40 * growth * weekdayMultiplier * jitter)
+  )
 
   let pageviews = 0
   let bounces = 0
   let durationSum = 0
   const visitorSet = new Set()
-  const pageStats = new Map() // path -> { views, visitors: Set }
+  const pageStats = new Map() // path -> { views, visitors: Set, entrances, exits }
   const sourceStats = new Map() // key -> { ref, visits }
   const deviceStats = new Map() // key -> { dev, visits }
   const locationStats = new Map() // key -> { loc, visits }
+  const outboundLinkStats = new Map() // URL -> clicks
   const eventStats = new Map() // name -> count
 
   for (let i = 0; i < visitCount; i++) {
@@ -248,7 +378,12 @@ for (let offset = days; offset >= 1; offset--) {
     for (let p = 1; p < pageCount; p++) visitedPaths.push(weightedPick(PAGES))
 
     for (const pg of visitedPaths) {
-      const stat = pageStats.get(pg.path) ?? { views: 0, visitors: new Set() }
+      const stat = pageStats.get(pg.path) ?? {
+        views: 0,
+        visitors: new Set(),
+        entrances: 0,
+        exits: 0,
+      }
       stat.views++
       stat.visitors.add(visitorId)
       pageStats.set(pg.path, stat)
@@ -260,17 +395,28 @@ for (let offset = days; offset >= 1; offset--) {
       }
     }
 
-    const sKey = `${referrer.referrerDomain}\u0000${referrer.utmSource}\u0000${referrer.utmMedium}`
+    pageStats.get(visitedPaths[0].path).entrances++
+    pageStats.get(visitedPaths[visitedPaths.length - 1].path).exits++
+
+    if (Math.random() < 0.18) {
+      const link = weightedPick(OUTBOUND_LINKS)
+      outboundLinkStats.set(
+        link.url,
+        (outboundLinkStats.get(link.url) ?? 0) + 1
+      )
+    }
+
+    const sKey = `${referrer.referrerDomain}\u0000${referrer.utmSource}\u0000${referrer.utmMedium}\u0000${referrer.utmCampaign}`
     const sStat = sourceStats.get(sKey) ?? { referrer, visits: 0 }
     sStat.visits++
     sourceStats.set(sKey, sStat)
 
-    const dKey = `${device.deviceType}\u0000${device.browser}`
+    const dKey = `${device.deviceType}\u0000${device.browser}\u0000${device.os}`
     const dStat = deviceStats.get(dKey) ?? { device, visits: 0 }
     dStat.visits++
     deviceStats.set(dKey, dStat)
 
-    const lKey = `${location.country}\u0000${location.city}`
+    const lKey = `${location.country}\u0000${location.region}\u0000${location.city}`
     const lStat = locationStats.get(lKey) ?? { location, visits: 0 }
     lStat.visits++
     locationStats.set(lKey, lStat)
@@ -280,41 +426,54 @@ for (let offset = days; offset >= 1; offset--) {
   const avgDuration = visitCount > 0 ? durationSum / visitCount : 0
 
   statements.push(
-    `INSERT INTO daily_summary (site_id, date, visitors, visits, pageviews, bounce_rate, avg_duration_seconds) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${visitorSet.size}, ${visitCount}, ${pageviews}, ${bounceRate.toFixed(4)}, ${avgDuration.toFixed(2)}) ON CONFLICT (site_id, date) DO UPDATE SET visitors=excluded.visitors, visits=excluded.visits, pageviews=excluded.pageviews, bounce_rate=excluded.bounce_rate, avg_duration_seconds=excluded.avg_duration_seconds;`,
+    `INSERT INTO daily_summary (site_id, date, visitors, visits, pageviews, bounce_rate, avg_duration_seconds) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${visitorSet.size}, ${visitCount}, ${pageviews}, ${bounceRate.toFixed(4)}, ${avgDuration.toFixed(2)}) ON CONFLICT (site_id, date) DO UPDATE SET visitors=excluded.visitors, visits=excluded.visits, pageviews=excluded.pageviews, bounce_rate=excluded.bounce_rate, avg_duration_seconds=excluded.avg_duration_seconds;`
   )
 
   for (const [path, stat] of pageStats) {
     statements.push(
-      `INSERT INTO daily_pages (site_id, date, path, pageviews, visitors) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(path)}, ${stat.views}, ${stat.visitors.size}) ON CONFLICT (site_id, date, path) DO UPDATE SET pageviews=excluded.pageviews, visitors=excluded.visitors;`,
+      `INSERT INTO daily_pages (site_id, date, path, pageviews, visitors, entrances, exits) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(path)}, ${stat.views}, ${stat.visitors.size}, ${stat.entrances}, ${stat.exits}) ON CONFLICT (site_id, date, path) DO UPDATE SET pageviews=excluded.pageviews, visitors=excluded.visitors, entrances=excluded.entrances, exits=excluded.exits;`
     )
   }
   for (const { referrer, visits } of sourceStats.values()) {
     statements.push(
-      `INSERT INTO daily_sources (site_id, date, referrer_domain, utm_source, utm_medium, visits) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(referrer.referrerDomain)}, ${esc(referrer.utmSource)}, ${esc(referrer.utmMedium)}, ${visits}) ON CONFLICT (site_id, date, referrer_domain, utm_source, utm_medium) DO UPDATE SET visits=excluded.visits;`,
+      `INSERT INTO daily_sources (site_id, date, referrer_domain, utm_source, utm_medium, utm_campaign, visits) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(referrer.referrerDomain)}, ${esc(referrer.utmSource)}, ${esc(referrer.utmMedium)}, ${esc(referrer.utmCampaign)}, ${visits}) ON CONFLICT (site_id, date, referrer_domain, utm_source, utm_medium, utm_campaign) DO UPDATE SET visits=excluded.visits;`
     )
   }
   for (const { device, visits } of deviceStats.values()) {
     statements.push(
-      `INSERT INTO daily_devices (site_id, date, device_type, browser, visits) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(device.deviceType)}, ${esc(device.browser)}, ${visits}) ON CONFLICT (site_id, date, device_type, browser) DO UPDATE SET visits=excluded.visits;`,
+      `INSERT INTO daily_devices (site_id, date, device_type, browser, os, visits) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(device.deviceType)}, ${esc(device.browser)}, ${esc(device.os)}, ${visits}) ON CONFLICT (site_id, date, device_type, browser, os) DO UPDATE SET visits=excluded.visits;`
     )
   }
   for (const { location, visits } of locationStats.values()) {
     statements.push(
-      `INSERT INTO daily_locations (site_id, date, country, city, visits) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(location.country)}, ${esc(location.city)}, ${visits}) ON CONFLICT (site_id, date, country, city) DO UPDATE SET visits=excluded.visits;`,
+      `INSERT INTO daily_locations (site_id, date, country, region, city, visits) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(location.country)}, ${esc(location.region)}, ${esc(location.city)}, ${visits}) ON CONFLICT (site_id, date, country, region, city) DO UPDATE SET visits=excluded.visits;`
+    )
+  }
+  for (const [url, clicks] of outboundLinkStats) {
+    statements.push(
+      `INSERT INTO daily_outbound_links (site_id, date, url, clicks) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(url)}, ${clicks}) ON CONFLICT (site_id, date, url) DO UPDATE SET clicks=excluded.clicks;`
     )
   }
   for (const [name, count] of eventStats) {
     statements.push(
-      `INSERT INTO daily_events (site_id, date, name, count) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(name)}, ${count}) ON CONFLICT (site_id, date, name) DO UPDATE SET count=excluded.count;`,
+      `INSERT INTO daily_events (site_id, date, name, count) VALUES (${esc(siteId)}, ${esc(dateStr)}, ${esc(name)}, ${count}) ON CONFLICT (site_id, date, name) DO UPDATE SET count=excluded.count;`
     )
   }
 }
 
 // --- Today: raw rows only (§8 — "today" is the one slice the dashboard
 // reads live from the raw tables).
-const elapsedFraction = Math.min(1, (now.getUTCHours() * 60 + now.getUTCMinutes()) / (24 * 60))
-const todayVisitCount = Math.max(2, Math.round(45 * elapsedFraction * (0.7 + Math.random() * 0.6)))
-const todayStartSec = Math.floor(new Date(`${todayStr}T00:00:00Z`).getTime() / 1000)
+const elapsedFraction = Math.min(
+  1,
+  (now.getUTCHours() * 60 + now.getUTCMinutes()) / (24 * 60)
+)
+const todayVisitCount = Math.max(
+  2,
+  Math.round(45 * elapsedFraction * (0.7 + Math.random() * 0.6))
+)
+const todayStartSec = Math.floor(
+  new Date(`${todayStr}T00:00:00Z`).getTime() / 1000
+)
 const nowSec = Math.floor(now.getTime() / 1000)
 
 for (let i = 0; i < todayVisitCount; i++) {
@@ -330,7 +489,9 @@ for (let i = 0; i < todayVisitCount; i++) {
   const isBounce = pageCount === 1
   const startedAt = randInt(todayStartSec, nowSec)
   const perPageGap = randInt(15, 90)
-  const endedAt = isBounce ? startedAt + randInt(4, 45) : startedAt + perPageGap * (pageCount - 1)
+  const endedAt = isBounce
+    ? startedAt + randInt(4, 45)
+    : startedAt + perPageGap * (pageCount - 1)
 
   markVisitorSeen(visitorId, startedAt)
   markVisitorSeen(visitorId, endedAt)
@@ -342,29 +503,36 @@ for (let i = 0; i < todayVisitCount; i++) {
   const exitPage = visitedPaths[visitedPaths.length - 1].path
 
   statements.push(
-    `INSERT INTO visits (id, site_id, visitor_id, started_at, ended_at, entry_page, exit_page, page_count, is_bounce, source_id, device_id, location_id) VALUES (${esc(visitId)}, ${esc(siteId)}, ${esc(visitorId)}, ${startedAt}, ${endedAt}, ${esc(entryPage)}, ${esc(exitPage)}, ${pageCount}, ${isBounce ? 1 : 0}, ${sourceIdSubquery(referrer)}, ${deviceIdSubquery(device)}, ${locationIdSubquery(location)});`,
+    `INSERT INTO visits (id, site_id, visitor_id, started_at, ended_at, entry_page, exit_page, page_count, is_bounce, source_id, device_id, location_id) VALUES (${esc(visitId)}, ${esc(siteId)}, ${esc(visitorId)}, ${startedAt}, ${endedAt}, ${esc(entryPage)}, ${esc(exitPage)}, ${pageCount}, ${isBounce ? 1 : 0}, ${sourceIdSubquery(referrer)}, ${deviceIdSubquery(device)}, ${locationIdSubquery(location)});`
   )
 
   visitedPaths.forEach((pg, idx) => {
     const ts = pageCount === 1 ? startedAt : startedAt + idx * perPageGap
     statements.push(
-      `INSERT INTO pages (site_id, visit_id, path, title, timestamp) VALUES (${esc(siteId)}, ${esc(visitId)}, ${esc(pg.path)}, ${esc(pg.title)}, ${ts});`,
+      `INSERT INTO pages (site_id, visit_id, path, title, timestamp) VALUES (${esc(siteId)}, ${esc(visitId)}, ${esc(pg.path)}, ${esc(pg.title)}, ${ts});`
     )
     for (const rule of EVENT_RULES) {
       if (rule.pages.includes(pg.path) && Math.random() < rule.chance) {
         statements.push(
-          `INSERT INTO events (site_id, visit_id, name, props, timestamp) VALUES (${esc(siteId)}, ${esc(visitId)}, ${esc(rule.name)}, NULL, ${ts});`,
+          `INSERT INTO events (site_id, visit_id, name, props, timestamp) VALUES (${esc(siteId)}, ${esc(visitId)}, ${esc(rule.name)}, NULL, ${ts});`
         )
       }
     }
   })
+
+  if (Math.random() < 0.18) {
+    const link = weightedPick(OUTBOUND_LINKS)
+    statements.push(
+      `INSERT INTO outbound_links (site_id, visitor_id, url, timestamp) VALUES (${esc(siteId)}, ${esc(visitorId)}, ${esc(link.url)}, ${endedAt});`
+    )
+  }
 }
 
 const visitorRows = []
 for (const [id, first] of visitorFirstSeen) {
   const last = visitorLastSeen.get(id)
   visitorRows.push(
-    `INSERT INTO visitors (id, site_id, first_seen, last_seen) VALUES (${esc(id)}, ${esc(siteId)}, ${first}, ${last}) ON CONFLICT (id) DO UPDATE SET last_seen=excluded.last_seen;`,
+    `INSERT INTO visitors (id, site_id, first_seen, last_seen) VALUES (${esc(id)}, ${esc(siteId)}, ${first}, ${last}) ON CONFLICT (id) DO UPDATE SET last_seen=excluded.last_seen;`
   )
 }
 
@@ -376,7 +544,9 @@ for (const [id, first] of visitorFirstSeen) {
 const output = [...lookupInserts, ...visitorRows, ...statements].join("\n")
 writeFileSync("seed-output.sql", output)
 
-console.log(`Generated ${statements.length + lookupInserts.length + visitorRows.length} statements`)
+console.log(
+  `Generated ${statements.length + lookupInserts.length + visitorRows.length} statements`
+)
 console.log(`  - ${days} days of daily_* rollups`)
 console.log(`  - ${todayVisitCount} raw visits for today (${todayStr})`)
 console.log(`  - ${visitorRows.length} distinct visitors`)

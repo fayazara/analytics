@@ -77,9 +77,10 @@ conversions, etc.):
 
 `http://localhost:3000/` (or your deployed URL) — one page, a site
 switcher + date-range picker (`today` / `7d` / `30d` / `6m` / `1y`) at
-the top, stat cards + chart + ranked lists (pages, sources, devices,
-locations, custom events) below. Add more sites any time from the same
-page (the `+` button next to the switcher).
+the top, stat cards + chart + filterable ranked lists (top/entry/exit
+pages, referrers/outbound links/UTM, browser/OS/device type,
+country/region/city, and custom events) below. Add more sites any time
+from the same page.
 
 Live visitor count (top-left badge) is pushed over a WebSocket from the
 site's `LiveVisitors` Durable Object — no polling.
@@ -98,10 +99,10 @@ local dev, all routes are open.
 | `/api/sites/:id`             | `GET`, `DELETE`    | Fetch / delete a site.                                  |
 | `/api/sites/:id/summary`     | `GET`              | Stat-card totals for `?range=`.                         |
 | `/api/sites/:id/timeseries`  | `GET`              | Chart data — daily points, or hourly for `range=today`. |
-| `/api/sites/:id/pages`       | `GET`              | Top pages.                                              |
-| `/api/sites/:id/sources`     | `GET`              | Top referrers/UTM sources.                              |
-| `/api/sites/:id/devices`     | `GET`              | Top browser/device-type combos.                         |
-| `/api/sites/:id/locations`   | `GET`              | Top country/city combos.                                |
+| `/api/sites/:id/pages`       | `GET`              | `?view=top\|entered\|exited`.                           |
+| `/api/sites/:id/sources`     | `GET`              | `?view=referrer\|links\|utm`.                           |
+| `/api/sites/:id/devices`     | `GET`              | `?view=browser\|os\|device`.                            |
+| `/api/sites/:id/locations`   | `GET`              | `?view=country\|region\|city`.                          |
 | `/api/sites/:id/events`      | `GET`              | Top custom events.                                      |
 | `/api/sites/:id/realtime/ws` | `GET` (WS upgrade) | Live visitor count, proxied to the `LiveVisitors` DO.   |
 
@@ -114,8 +115,9 @@ events, no matter how far back the range goes (§8).
 
 A Cron Trigger (`10 0 * * *`, see `wrangler.jsonc` → `triggers.crons`)
 rolls the previous UTC day's raw rows into `daily_summary`/`daily_pages`/
-`daily_sources`/`daily_devices`/`daily_locations`/`daily_events` for
-every site (`src/lib/aggregate.ts`). It's idempotent (`INSERT ... ON
+`daily_sources`/`daily_devices`/`daily_locations`/
+`daily_outbound_links`/`daily_events` for every site
+(`src/lib/aggregate.ts`). It's idempotent (`INSERT ... ON
 CONFLICT DO UPDATE`), so re-running it for an already-aggregated day is
 safe.
 
@@ -129,9 +131,9 @@ curl "http://localhost:3000/cdn-cgi/handler/scheduled"
 
 For local dev, `scripts/seed-demo-data.mjs` generates realistic fake
 traffic (real referrer domains, real cities/countries, real
-browser/OS/device combos, a fictional SaaS site's pages, a handful of
-custom events) — daily rollups for the past N days, plus raw rows for
-"today":
+browser/OS/device combos, outbound-link clicks, a fictional SaaS site's
+pages, and a handful of custom events) — daily rollups for the past N
+days, plus raw rows for "today":
 
 ```bash
 node scripts/seed-demo-data.mjs <site-id> [days]   # default 90 days

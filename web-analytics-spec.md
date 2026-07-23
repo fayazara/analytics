@@ -114,6 +114,15 @@ CREATE TABLE pages (
 CREATE INDEX idx_pages_site_ts ON pages(site_id, timestamp);
 CREATE INDEX idx_pages_visit ON pages(visit_id);
 
+CREATE TABLE outbound_links (        -- external link clicks, query/hash stripped
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  site_id TEXT NOT NULL REFERENCES sites(id),
+  visitor_id TEXT NOT NULL REFERENCES visitors(id),
+  url TEXT NOT NULL,
+  timestamp INTEGER NOT NULL
+);
+CREATE INDEX idx_outbound_links_site_ts ON outbound_links(site_id, timestamp);
+
 CREATE TABLE sources (               -- normalized referrer lookup
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   site_id TEXT NOT NULL REFERENCES sites(id),
@@ -168,28 +177,38 @@ CREATE TABLE daily_summary (
 CREATE TABLE daily_pages (
   site_id TEXT NOT NULL, date TEXT NOT NULL, path TEXT NOT NULL,
   pageviews INTEGER NOT NULL, visitors INTEGER NOT NULL,
+  entrances INTEGER NOT NULL, exits INTEGER NOT NULL,
   PRIMARY KEY (site_id, date, path)
 );
 
 CREATE TABLE daily_sources (
   site_id TEXT NOT NULL, date TEXT NOT NULL,
-  referrer_domain TEXT NOT NULL, utm_source TEXT, utm_medium TEXT,
+  referrer_domain TEXT NOT NULL, utm_source TEXT NOT NULL,
+  utm_medium TEXT NOT NULL, utm_campaign TEXT NOT NULL,
   visits INTEGER NOT NULL,
-  PRIMARY KEY (site_id, date, referrer_domain, utm_source, utm_medium)
+  PRIMARY KEY (
+    site_id, date, referrer_domain, utm_source, utm_medium, utm_campaign
+  )
 );
 
 CREATE TABLE daily_devices (
   site_id TEXT NOT NULL, date TEXT NOT NULL,
-  device_type TEXT NOT NULL, browser TEXT NOT NULL,
+  device_type TEXT NOT NULL, browser TEXT NOT NULL, os TEXT NOT NULL,
   visits INTEGER NOT NULL,
-  PRIMARY KEY (site_id, date, device_type, browser)
+  PRIMARY KEY (site_id, date, device_type, browser, os)
 );
 
 CREATE TABLE daily_locations (
   site_id TEXT NOT NULL, date TEXT NOT NULL,
-  country TEXT NOT NULL, city TEXT,
+  country TEXT NOT NULL, region TEXT NOT NULL, city TEXT NOT NULL,
   visits INTEGER NOT NULL,
-  PRIMARY KEY (site_id, date, country, city)
+  PRIMARY KEY (site_id, date, country, region, city)
+);
+
+CREATE TABLE daily_outbound_links (
+  site_id TEXT NOT NULL, date TEXT NOT NULL, url TEXT NOT NULL,
+  clicks INTEGER NOT NULL,
+  PRIMARY KEY (site_id, date, url)
 );
 
 CREATE TABLE daily_events (
@@ -203,7 +222,7 @@ CREATE TABLE daily_events (
 
 `POST /collect` — called by a small tracking snippet, or `navigator.sendBeacon`.
 
-Request body: `{ site_id, path, title, referrer, screen_w, screen_h }` (custom events: `{ site_id, name, props }`)
+Request body: `{ site_id, path, title, referrer, screen_w, screen_h }` (outbound links: `{ site_id, outbound_url }`; custom events: `{ site_id, name, props }`)
 
 Worker logic per request:
 
@@ -231,7 +250,7 @@ For each site, for the just-completed UTC day:
 ## 8. Dashboard & API
 
 Single page per site (site switcher + date-range picker at the top, everything else on one scroll):
-stat cards (visitors, visits, pageviews, bounce rate, avg duration) → time-series chart → top pages / top sources / devices / locations / events panels.
+stat cards (visitors, visits, pageviews, bounce rate, avg duration) → time-series chart → pages (top/entered/exited), sources (referrers/outbound links/UTM), locations (countries/regions/cities), devices (browsers/OS/device type), and custom-events panels.
 
 **Query rule:** any range that includes only _past, complete_ days reads exclusively from `daily_*` tables. Only "today" reads from raw tables. A "last 30 days" query is a `SUM()`/`GROUP BY` over ≤30 rollup rows — never a scan of the underlying events, whether the range is 30 days or 3 years.
 

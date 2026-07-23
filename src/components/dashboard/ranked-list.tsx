@@ -11,6 +11,8 @@ interface RankedListProps {
   items: RankedListItem[]
   valueFormat?: (value: number) => string
   emptyLabel?: string
+  /** Animate rows when they arrive after an intentional filter change. */
+  animateItems?: boolean
   /**
    * Denominator for the hover-reveal "% of total" figure. Pass the true
    * site-wide total for this metric (e.g. `summary.visits`) — not the sum
@@ -33,6 +35,7 @@ export function RankedList({
   items,
   valueFormat,
   emptyLabel = "No data yet",
+  animateItems = false,
   total,
 }: RankedListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -73,13 +76,20 @@ export function RankedList({
         ref={scrollRef}
         className={`group flex ${LIST_HEIGHT} flex-col gap-0.5 overflow-y-auto pr-1`}
       >
-        {items.map((item) => {
+        {items.map((item, index) => {
           const percent =
             denominator > 0 ? Math.round((item.value / denominator) * 100) : 0
           return (
             <div
               key={item.key}
-              className="relative flex h-7 shrink-0 items-center gap-2 rounded-md px-2 text-sm text-kumo-subtle"
+              className={`relative flex h-7 shrink-0 items-center gap-2 rounded-md px-2 text-sm text-kumo-subtle ${
+                animateItems ? "ranked-list-filter-enter" : ""
+              }`}
+              style={
+                animateItems
+                  ? { animationDelay: `${index * 30}ms` }
+                  : undefined
+              }
             >
               <div
                 className="absolute inset-y-0 left-0 rounded-md bg-kumo-tint"

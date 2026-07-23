@@ -1,6 +1,6 @@
-import { sql } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import { db } from "@/db"
-import { sites } from "@/db/schema"
+import { dailyDevices, dailyLocations, dailySources, sites } from "@/db/schema"
 import { formatDateInTz, startOfDayUtcMs } from "@/lib/dates"
 
 /**
@@ -12,7 +12,9 @@ import { formatDateInTz, startOfDayUtcMs } from "@/lib/dates"
  * for a day that's already been aggregated (manual backfill, retry after
  * a failure) is always safe.
  */
-export async function runDailyAggregation(dateOverride?: string): Promise<void> {
+export async function runDailyAggregation(
+  dateOverride?: string
+): Promise<void> {
   const allSites = await db.select().from(sites)
   for (const site of allSites) {
     const date = dateOverride ?? previousDateInTz(site.timezone)
@@ -37,10 +39,25 @@ function nextDateStr(date: string): string {
 export async function aggregateSiteDay(
   siteId: string,
   timezone: string,
-  date: string,
+  date: string
 ): Promise<void> {
   const startSec = Math.floor(startOfDayUtcMs(date, timezone) / 1000)
   const endSec = Math.floor(startOfDayUtcMs(nextDateStr(date), timezone) / 1000)
+
+  // These rollups gained additional dimensions after launch. Replacing the
+  // day's rows avoids retaining legacy partially-grouped rows alongside the
+  // new, more specific groups when a day is re-aggregated.
+  await db
+    .delete(dailySources)
+    .where(and(eq(dailySources.siteId, siteId), eq(dailySources.date, date)))
+  await db
+    .delete(dailyDevices)
+    .where(and(eq(dailyDevices.siteId, siteId), eq(dailyDevices.date, date)))
+  await db
+    .delete(dailyLocations)
+    .where(
+      and(eq(dailyLocations.siteId, siteId), eq(dailyLocations.date, date))
+    )
 
   await db.run(sql`
     INSERT INTO daily_summary (site_id, date, visitors, visits, pageviews, bounce_rate, avg_duration_seconds)
@@ -61,69 +78,94 @@ export async function aggregateSiteDay(
   `)
 
   await db.run(sql`
-    INSERT INTO daily_pages (site_id, date, path, pageviews, visitors)
+    INSERT INTO daily_pages (site_id, date, path, pageviews, visitors, entrances, exits)
     SELECT
       ${siteId},
       ${date},
       p.path,
       COUNT(*),
-      COUNT(DISTINCT v.visitor_id)
+      COUNT(DISTINCT v.visitor_id),
+      COUNT(DISTINCT CASE WHEN v.entry_page = p.path THEN v.id END),
+      COUNT(DISTINCT CASE WHEN v.exit_page = p.path THEN v.id END)
     FROM pages p
     JOIN visits v ON v.id = p.visit_id
     WHERE p.site_id = ${siteId} AND p.timestamp >= ${startSec} AND p.timestamp < ${endSec}
     GROUP BY p.path
     ON CONFLICT (site_id, date, path) DO UPDATE SET
       pageviews = excluded.pageviews,
-      visitors = excluded.visitors
+      visitors = excluded.visitors,
+      entrances = excluded.entrances,
+      exits = excluded.exits
   `)
 
   await db.run(sql`
-    INSERT INTO daily_sources (site_id, date, referrer_domain, utm_source, utm_medium, visits)
+    INSERT INTO daily_sources (site_id, date, referrer_domain, utm_source, utm_medium, utm_campaign, visits)
     SELECT
       ${siteId},
       ${date},
       s.referrer_domain,
-      s.utm_source,
-      s.utm_medium,
+      COALESCE(s.utm_source, ''),
+      COALESCE(s.utm_medium, ''),
+      COALESCE(s.utm_campaign, ''),
       COUNT(*)
     FROM visits v
     JOIN sources s ON s.id = v.source_id
     WHERE v.site_id = ${siteId} AND v.started_at >= ${startSec} AND v.started_at < ${endSec}
-    GROUP BY s.referrer_domain, s.utm_source, s.utm_medium
-    ON CONFLICT (site_id, date, referrer_domain, utm_source, utm_medium) DO UPDATE SET
+    GROUP BY
+      s.referrer_domain,
+      COALESCE(s.utm_source, ''),
+      COALESCE(s.utm_medium, ''),
+      COALESCE(s.utm_campaign, '')
+    ON CONFLICT (site_id, date, referrer_domain, utm_source, utm_medium, utm_campaign) DO UPDATE SET
       visits = excluded.visits
   `)
 
   await db.run(sql`
-    INSERT INTO daily_devices (site_id, date, device_type, browser, visits)
+    INSERT INTO daily_devices (site_id, date, device_type, browser, os, visits)
     SELECT
       ${siteId},
       ${date},
       d.device_type,
       d.browser,
+      d.os,
       COUNT(*)
     FROM visits v
     JOIN devices d ON d.id = v.device_id
     WHERE v.site_id = ${siteId} AND v.started_at >= ${startSec} AND v.started_at < ${endSec}
-    GROUP BY d.device_type, d.browser
-    ON CONFLICT (site_id, date, device_type, browser) DO UPDATE SET
+    GROUP BY d.device_type, d.browser, d.os
+    ON CONFLICT (site_id, date, device_type, browser, os) DO UPDATE SET
       visits = excluded.visits
   `)
 
   await db.run(sql`
-    INSERT INTO daily_locations (site_id, date, country, city, visits)
+    INSERT INTO daily_locations (site_id, date, country, region, city, visits)
     SELECT
       ${siteId},
       ${date},
       l.country,
-      l.city,
+      COALESCE(l.region, ''),
+      COALESCE(l.city, ''),
       COUNT(*)
     FROM visits v
     JOIN locations l ON l.id = v.location_id
     WHERE v.site_id = ${siteId} AND v.started_at >= ${startSec} AND v.started_at < ${endSec}
-    GROUP BY l.country, l.city
-    ON CONFLICT (site_id, date, country, city) DO UPDATE SET
+    GROUP BY l.country, COALESCE(l.region, ''), COALESCE(l.city, '')
+    ON CONFLICT (site_id, date, country, region, city) DO UPDATE SET
       visits = excluded.visits
+  `)
+
+  await db.run(sql`
+    INSERT INTO daily_outbound_links (site_id, date, url, clicks)
+    SELECT
+      ${siteId},
+      ${date},
+      o.url,
+      COUNT(*)
+    FROM outbound_links o
+    WHERE o.site_id = ${siteId} AND o.timestamp >= ${startSec} AND o.timestamp < ${endSec}
+    GROUP BY o.url
+    ON CONFLICT (site_id, date, url) DO UPDATE SET
+      clicks = excluded.clicks
   `)
 
   await db.run(sql`

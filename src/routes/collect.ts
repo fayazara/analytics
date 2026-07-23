@@ -4,7 +4,14 @@ import { desc, eq } from "drizzle-orm"
 import type { CollectRequest } from "@/lib/collect-schema"
 import type { GeoInfo } from "@/lib/geo"
 import { db } from "@/db"
-import { events, pages, sites, visitors, visits } from "@/db/schema"
+import {
+  events,
+  outboundLinks,
+  pages,
+  sites,
+  visitors,
+  visits,
+} from "@/db/schema"
 import { collectRequestSchema } from "@/lib/collect-schema"
 import { extractGeo } from "@/lib/geo"
 import {
@@ -129,10 +136,53 @@ async function processCollectRequest(
     })
     .onConflictDoUpdate({ target: visitors.id, set: { lastSeen: nowSec } })
 
-  if (data.name) {
+  if (data.outbound_url) {
+    await handleOutboundLink(site, visitorId, data.outbound_url, nowSec)
+  } else if (data.name) {
     await handleEvent(site.id, visitorId, data, nowSec)
   } else if (data.path) {
     await handlePageview(site, visitorId, data, ctx, nowSec)
+  }
+}
+
+async function handleOutboundLink(
+  site: typeof sites.$inferSelect,
+  visitorId: string,
+  value: string,
+  nowSec: number
+): Promise<void> {
+  const url = normalizeOutboundUrl(value, site.domain)
+  if (!url) return
+
+  await db.insert(outboundLinks).values({
+    siteId: site.id,
+    visitorId,
+    url,
+    timestamp: nowSec,
+  })
+}
+
+function normalizeOutboundUrl(
+  value: string,
+  siteDomain: string
+): string | null {
+  try {
+    const url = new URL(value)
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null
+
+    const siteUrl = new URL(
+      siteDomain.includes("://") ? siteDomain : `https://${siteDomain}`
+    )
+    if (
+      url.hostname.replace(/^www\./, "") ===
+      siteUrl.hostname.replace(/^www\./, "")
+    ) {
+      return null
+    }
+
+    return `${url.origin}${url.pathname}`
+  } catch {
+    return null
   }
 }
 

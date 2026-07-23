@@ -9,16 +9,34 @@ import { Empty } from "@cloudflare/kumo/components/empty"
 import { DropdownMenu } from "@cloudflare/kumo/components/dropdown"
 import { LayerCard } from "@cloudflare/kumo/components/layer-card"
 import {
+  AndroidLogoIcon,
+  AppleLogoIcon,
   BrowserIcon,
   CaretDownIcon,
   CodeIcon,
+  DesktopIcon,
+  DeviceMobileIcon,
+  DeviceTabletIcon,
+  LinuxLogoIcon,
   TrashIcon,
+  WindowsLogoIcon,
 } from "@phosphor-icons/react"
 import { ChartBarIcon } from "@phosphor-icons/react/dist/ssr"
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { z } from "zod"
+import type {
+  DeviceDimension,
+  LocationDimension,
+  PageDimension,
+  SourceDimension,
+  TopDeviceRow,
+  TopEventRow,
+  TopLocationRow,
+  TopPageRow,
+  TopSourceRow,
+} from "@/lib/top-lists"
 import { AddSiteDialog } from "@/components/dashboard/add-site-dialog"
 import { DeleteSiteDialog } from "@/components/dashboard/delete-site-dialog"
 import {
@@ -81,25 +99,6 @@ interface TimeseriesPoint {
   visitors: number
 }
 
-interface TopPageRow {
-  path: string
-  pageviews: number
-  visitors: number
-}
-
-interface TopSourceRow {
-  referrerDomain: string
-  utmSource: string
-  utmMedium: string
-  visits: number
-}
-
-interface TopDeviceRow {
-  deviceType: string
-  browser: string
-  visits: number
-}
-
 function BrowserMark({ browser }: { browser: string }) {
   let logo
   switch (browser) {
@@ -134,21 +133,142 @@ function BrowserMark({ browser }: { browser: string }) {
   )
 }
 
-interface TopLocationRow {
-  country: string
-  city: string
-  visits: number
+function OsMark({ os }: { os: string }) {
+  const className = "size-5 shrink-0 text-kumo-subtle"
+  switch (os) {
+    case "Windows":
+      return <WindowsLogoIcon className={className} weight="fill" />
+    case "macOS":
+    case "iOS":
+      return <AppleLogoIcon className={className} weight="fill" />
+    case "Android":
+      return <AndroidLogoIcon className={className} weight="fill" />
+    case "Linux":
+      return <LinuxLogoIcon className={className} weight="fill" />
+    default:
+      return <DesktopIcon className={className} />
+  }
 }
 
-interface TopEventRow {
-  name: string
-  count: number
+function DeviceMark({ device }: { device: string }) {
+  const className = "size-5 shrink-0 text-kumo-subtle"
+  if (device === "mobile") return <DeviceMobileIcon className={className} />
+  if (device === "tablet") return <DeviceTabletIcon className={className} />
+  return <DesktopIcon className={className} />
 }
 
 async function fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal })
   if (!res.ok) throw new Error(`Request failed: ${res.status}`)
   return await res.json()
+}
+
+interface TopListResponse<TRow> {
+  rows: Array<TRow>
+  total: number
+  animateItems: boolean
+}
+
+function useTopList<TRow>(
+  siteId: string | undefined,
+  range: UiRangeKey,
+  resource: "pages" | "sources" | "devices" | "locations",
+  view: string,
+  animateViewChange: boolean
+): TopListResponse<TRow> {
+  const [result, setResult] = useState<TopListResponse<TRow>>({
+    rows: [],
+    total: 0,
+    animateItems: false,
+  })
+  const resolvedViewRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!siteId) return
+    const controller = new AbortController()
+    setResult((current) => ({
+      ...current,
+      rows: [],
+      total: 0,
+      animateItems: false,
+    }))
+
+    fetchJson<Omit<TopListResponse<TRow>, "animateItems">>(
+      `/api/sites/${siteId}/${resource}?range=${range}&view=${view}`,
+      controller.signal
+    )
+      .then((nextResult) => {
+        const shouldAnimate =
+          animateViewChange &&
+          resolvedViewRef.current !== null &&
+          resolvedViewRef.current !== view
+        resolvedViewRef.current = view
+        setResult({
+          ...nextResult,
+          animateItems: shouldAnimate,
+        })
+      })
+      .catch((error) => {
+        if (error instanceof Error && error.name !== "AbortError") {
+          console.error(error)
+        }
+      })
+
+    return () => controller.abort()
+  }, [siteId, range, resource, view, animateViewChange])
+
+  return result
+}
+
+function CardHeader({
+  title,
+  tabs,
+  value,
+  onValueChange,
+}: {
+  title: string
+  tabs: Array<{ value: string; label: string }>
+  value: string
+  onValueChange: (value: string, animate: boolean) => void
+}) {
+  return (
+    <div className="flex w-full min-w-0 items-center justify-between gap-2">
+      <span className="shrink-0">{title}</span>
+      <div className="ml-auto flex shrink-0 items-center gap-0.5">
+        {tabs.map((tab) => {
+          const selected = tab.value === value
+          return (
+            <Button
+              key={tab.value}
+              type="button"
+              variant="ghost"
+              size="xs"
+              aria-pressed={selected}
+              className={
+                selected
+                  ? "bg-kumo-fill text-kumo-default hover:bg-kumo-fill"
+                  : "text-kumo-subtle opacity-50 hover:opacity-100"
+              }
+              onClick={(event) =>
+                onValueChange(tab.value, event.detail !== 0)
+              }
+            >
+              {tab.label}
+            </Button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const countryNames = new Intl.DisplayNames(["en"], { type: "region" })
+
+function locationLabel(row: TopLocationRow, dimension: LocationDimension) {
+  const country = countryNames.of(row.country) ?? row.country
+  if (dimension === "city") return `${row.city}, ${country}`
+  if (dimension === "region") return `${row.region}, ${country}`
+  return country
 }
 
 function App() {
@@ -165,17 +285,52 @@ function App() {
 
   const [summary, setSummary] = useState<SummaryResponse | null>(null)
   const [points, setPoints] = useState<Array<TimeseriesPoint>>([])
-  const [pageRows, setPageRows] = useState<Array<TopPageRow>>([])
-  const [sourceRows, setSourceRows] = useState<Array<TopSourceRow>>([])
-  const [deviceRows, setDeviceRows] = useState<Array<TopDeviceRow>>([])
-  const [locationRows, setLocationRows] = useState<Array<TopLocationRow>>([])
   const [eventRows, setEventRows] = useState<Array<TopEventRow>>([])
+  const [pageDimension, setPageDimension] = useState<PageDimension>("top")
+  const [sourceDimension, setSourceDimension] =
+    useState<SourceDimension>("referrer")
+  const [deviceDimension, setDeviceDimension] =
+    useState<DeviceDimension>("browser")
+  const [locationDimension, setLocationDimension] =
+    useState<LocationDimension>("country")
   const [loading, setLoading] = useState(false)
   const [addSiteOpen, setAddSiteOpen] = useState(false)
   const [deleteSiteId, setDeleteSiteId] = useState<string | null>(null)
   const [installSiteId, setInstallSiteId] = useState<string | null>(null)
+  const animatePageFilterRef = useRef(false)
+  const animateSourceFilterRef = useRef(false)
+  const animateDeviceFilterRef = useRef(false)
+  const animateLocationFilterRef = useRef(false)
 
   const liveCount = useLiveVisitorCount(selectedSiteId)
+  const pageList = useTopList<TopPageRow>(
+    selectedSiteId,
+    range,
+    "pages",
+    pageDimension,
+    animatePageFilterRef.current
+  )
+  const sourceList = useTopList<TopSourceRow>(
+    selectedSiteId,
+    range,
+    "sources",
+    sourceDimension,
+    animateSourceFilterRef.current
+  )
+  const deviceList = useTopList<TopDeviceRow>(
+    selectedSiteId,
+    range,
+    "devices",
+    deviceDimension,
+    animateDeviceFilterRef.current
+  )
+  const locationList = useTopList<TopLocationRow>(
+    selectedSiteId,
+    range,
+    "locations",
+    locationDimension,
+    animateLocationFilterRef.current
+  )
 
   useEffect(() => {
     if (!selectedSiteId) return
@@ -192,46 +347,16 @@ function App() {
         `${base}/timeseries?range=${range}`,
         controller.signal
       ),
-      fetchJson<{ rows: Array<TopPageRow> }>(
-        `${base}/pages?range=${range}`,
-        controller.signal
-      ),
-      fetchJson<{ rows: Array<TopSourceRow> }>(
-        `${base}/sources?range=${range}`,
-        controller.signal
-      ),
-      fetchJson<{ rows: Array<TopDeviceRow> }>(
-        `${base}/devices?range=${range}`,
-        controller.signal
-      ),
-      fetchJson<{ rows: Array<TopLocationRow> }>(
-        `${base}/locations?range=${range}`,
-        controller.signal
-      ),
       fetchJson<{ rows: Array<TopEventRow> }>(
         `${base}/activity?range=${range}`,
         controller.signal
       ),
     ])
-      .then(
-        ([
-          summaryRes,
-          tsRes,
-          pagesRes,
-          sourcesRes,
-          devicesRes,
-          locationsRes,
-          eventsRes,
-        ]) => {
-          setSummary(summaryRes)
-          setPoints(tsRes.points)
-          setPageRows(pagesRes.rows)
-          setSourceRows(sourcesRes.rows)
-          setDeviceRows(devicesRes.rows)
-          setLocationRows(locationsRes.rows)
-          setEventRows(eventsRes.rows)
-        }
-      )
+      .then(([summaryRes, tsRes, eventsRes]) => {
+        setSummary(summaryRes)
+        setPoints(tsRes.points)
+        setEventRows(eventsRes.rows)
+      })
       .catch((err) => {
         if (err instanceof Error && err.name !== "AbortError")
           console.error(err)
@@ -463,60 +588,146 @@ function App() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <LayerCard>
-          <LayerCard.Secondary>Top pages</LayerCard.Secondary>
+          <LayerCard.Secondary>
+            <CardHeader
+              title="Pages"
+              tabs={[
+                { value: "top", label: "Top" },
+                { value: "entered", label: "Entered" },
+                { value: "exited", label: "Exited" },
+              ]}
+              value={pageDimension}
+              onValueChange={(value, animate) => {
+                animatePageFilterRef.current = animate
+                setPageDimension(value as PageDimension)
+              }}
+            />
+          </LayerCard.Secondary>
           <LayerCard.Primary className="h-full p-2.5">
             <RankedList
-              items={pageRows.map((r) => ({
+              items={pageList.rows.map((r) => ({
                 key: r.path,
                 label: r.path,
-                value: r.pageviews,
+                value: r.count,
               }))}
-              total={summary?.pageviews}
+              total={pageList.total}
+              animateItems={pageList.animateItems}
             />
           </LayerCard.Primary>
         </LayerCard>
 
         <LayerCard>
-          <LayerCard.Secondary>Top sources</LayerCard.Secondary>
+          <LayerCard.Secondary>
+            <CardHeader
+              title="Sources"
+              tabs={[
+                { value: "referrer", label: "Referrers" },
+                { value: "links", label: "Links" },
+                { value: "utm", label: "UTM" },
+              ]}
+              value={sourceDimension}
+              onValueChange={(value, animate) => {
+                animateSourceFilterRef.current = animate
+                setSourceDimension(value as SourceDimension)
+              }}
+            />
+          </LayerCard.Secondary>
           <LayerCard.Primary className="h-full p-2.5">
             <RankedList
-              items={sourceRows.map((r) => ({
-                key: `${r.referrerDomain}-${r.utmSource}-${r.utmMedium}`,
-                label: r.utmSource || r.referrerDomain,
-                icon: <SourceIcon domain={r.referrerDomain} />,
+              items={sourceList.rows.map((r) => ({
+                key: r.key,
+                label: r.label,
+                icon: r.referrerDomain ? (
+                  <SourceIcon domain={r.referrerDomain} />
+                ) : undefined,
                 value: r.visits,
               }))}
-              total={summary?.visits}
+              total={sourceList.total}
+              animateItems={sourceList.animateItems}
+              emptyLabel={
+                sourceDimension === "links"
+                  ? "No outbound link clicks yet"
+                  : sourceDimension === "utm"
+                    ? "No UTM traffic yet"
+                    : "No referrers yet"
+              }
             />
           </LayerCard.Primary>
         </LayerCard>
 
         <LayerCard>
-          <LayerCard.Secondary>Devices</LayerCard.Secondary>
+          <LayerCard.Secondary>
+            <CardHeader
+              title="Devices"
+              tabs={[
+                { value: "browser", label: "Browsers" },
+                { value: "os", label: "OS" },
+                { value: "device", label: "Devices" },
+              ]}
+              value={deviceDimension}
+              onValueChange={(value, animate) => {
+                animateDeviceFilterRef.current = animate
+                setDeviceDimension(value as DeviceDimension)
+              }}
+            />
+          </LayerCard.Secondary>
           <LayerCard.Primary className="h-full p-2.5">
             <RankedList
-              items={deviceRows.map((r) => ({
-                key: `${r.deviceType}-${r.browser}`,
-                label: `${r.browser} · ${r.deviceType}`,
-                icon: <BrowserMark browser={r.browser} />,
+              items={deviceList.rows.map((r) => ({
+                key: r.value,
+                label:
+                  deviceDimension === "device"
+                    ? `${r.value.charAt(0).toUpperCase()}${r.value.slice(1)}`
+                    : r.value,
+                icon:
+                  deviceDimension === "browser" ? (
+                    <BrowserMark browser={r.value} />
+                  ) : deviceDimension === "os" ? (
+                    <OsMark os={r.value} />
+                  ) : (
+                    <DeviceMark device={r.value} />
+                  ),
                 value: r.visits,
               }))}
-              total={summary?.visits}
+              total={deviceList.total}
+              animateItems={deviceList.animateItems}
             />
           </LayerCard.Primary>
         </LayerCard>
 
         <LayerCard>
-          <LayerCard.Secondary>Locations</LayerCard.Secondary>
+          <LayerCard.Secondary>
+            <CardHeader
+              title="Locations"
+              tabs={[
+                { value: "country", label: "Countries" },
+                { value: "region", label: "Regions" },
+                { value: "city", label: "Cities" },
+              ]}
+              value={locationDimension}
+              onValueChange={(value, animate) => {
+                animateLocationFilterRef.current = animate
+                setLocationDimension(value as LocationDimension)
+              }}
+            />
+          </LayerCard.Secondary>
           <LayerCard.Primary className="h-full p-2.5">
             <RankedList
-              items={locationRows.map((r) => ({
-                key: `${r.country}-${r.city}`,
-                label: r.city || r.country,
+              items={locationList.rows.map((r) => ({
+                key: `${r.country}-${r.region}-${r.city}`,
+                label: locationLabel(r, locationDimension),
                 icon: <CountryFlag country={r.country} />,
                 value: r.visits,
               }))}
-              total={summary?.visits}
+              total={locationList.total}
+              animateItems={locationList.animateItems}
+              emptyLabel={
+                locationDimension === "region"
+                  ? "No region data yet"
+                  : locationDimension === "city"
+                    ? "No city data yet"
+                    : "No country data yet"
+              }
             />
           </LayerCard.Primary>
         </LayerCard>

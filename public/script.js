@@ -83,6 +83,25 @@
     send({ site_id: siteId, name: String(name), props: props || undefined })
   }
 
+  function trackOutboundLink(event) {
+    var target = event.target
+    var anchor = target && target.closest ? target.closest("a[href]") : null
+    if (!anchor) return
+
+    try {
+      var url = new URL(anchor.href, location.href)
+      if (
+        (url.protocol === "http:" || url.protocol === "https:") &&
+        url.hostname !== location.hostname
+      ) {
+        send({
+          site_id: siteId,
+          outbound_url: url.origin + url.pathname,
+        })
+      }
+    } catch (_err) {}
+  }
+
   // SPA route-change detection — most client-side routers call
   // pushState/replaceState on navigation.
   var originalPushState = history.pushState
@@ -97,6 +116,7 @@
     trackPageview()
   }
   window.addEventListener("popstate", trackPageview)
+  document.addEventListener("click", trackOutboundLink, true)
 
   // Public API for custom events (§6).
   window.wa = { track: trackEvent }

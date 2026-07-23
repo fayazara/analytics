@@ -15,6 +15,9 @@ export const collectRequestSchema = z.object({
   utm_campaign: z.string().max(500).optional(),
   screen_w: z.number().int().positive().optional(),
   screen_h: z.number().int().positive().optional(),
+  // Automatically tracked outbound link click. Query strings and hashes are
+  // stripped by both the browser snippet and the server before persistence.
+  outbound_url: z.string().url().max(2048).optional(),
   // Custom-event fields
   name: z.string().min(1).max(200).optional(),
   props: z.record(z.string(), z.unknown()).optional(),

@@ -34,6 +34,7 @@ export const Route = createFileRoute("/api/sites/$siteId")({
 
         await env.DB.batch([
           bindDelete("events"),
+          bindDelete("outbound_links"),
           bindDelete("pages"),
           bindDelete("visits"),
           bindDelete("visitors"),
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/api/sites/$siteId")({
           bindDelete("daily_sources"),
           bindDelete("daily_devices"),
           bindDelete("daily_locations"),
+          bindDelete("daily_outbound_links"),
           bindDelete("daily_events"),
           env.DB.prepare("DELETE FROM sites WHERE id = ?").bind(params.siteId),
         ])
