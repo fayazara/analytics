@@ -11,6 +11,9 @@ doc (data model, session logic, sizing/cost, etc.) — this README is the
 Drizzle ORM, a Durable Object for the live-visitor count, a Cron Trigger
 for daily rollups, Kumo (`@cloudflare/kumo`) for the dashboard UI.
 
+> [!NOTE]
+> If you do not want to use D1, please tell your agent to replace it with your own Postgres/MySQL DB and put Cloudflare Hyperdrive on top of it.
+
 ## First-time setup
 
 ```bash
