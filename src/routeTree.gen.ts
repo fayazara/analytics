@@ -9,27 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as CollectRouteImport } from './routes/collect'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CollectRouteImport } from './routes/collect'
 import { Route as ApiSitesRouteImport } from './routes/api/sites'
 import { Route as ApiSitesSiteIdRouteImport } from './routes/api/sites.$siteId'
-import { Route as ApiSitesSiteIdTimeseriesRouteImport } from './routes/api/sites.$siteId.timeseries'
-import { Route as ApiSitesSiteIdSummaryRouteImport } from './routes/api/sites.$siteId.summary'
-import { Route as ApiSitesSiteIdSourcesRouteImport } from './routes/api/sites.$siteId.sources'
-import { Route as ApiSitesSiteIdPagesRouteImport } from './routes/api/sites.$siteId.pages'
-import { Route as ApiSitesSiteIdLocationsRouteImport } from './routes/api/sites.$siteId.locations'
-import { Route as ApiSitesSiteIdDevicesRouteImport } from './routes/api/sites.$siteId.devices'
 import { Route as ApiSitesSiteIdActivityRouteImport } from './routes/api/sites.$siteId.activity'
+import { Route as ApiSitesSiteIdDevicesRouteImport } from './routes/api/sites.$siteId.devices'
+import { Route as ApiSitesSiteIdLocationsRouteImport } from './routes/api/sites.$siteId.locations'
+import { Route as ApiSitesSiteIdPagesRouteImport } from './routes/api/sites.$siteId.pages'
+import { Route as ApiSitesSiteIdSourcesRouteImport } from './routes/api/sites.$siteId.sources'
+import { Route as ApiSitesSiteIdSummaryRouteImport } from './routes/api/sites.$siteId.summary'
+import { Route as ApiSitesSiteIdTimeseriesRouteImport } from './routes/api/sites.$siteId.timeseries'
 import { Route as ApiSitesSiteIdRealtimeWsRouteImport } from './routes/api/sites.$siteId.realtime.ws'
 
-const CollectRoute = CollectRouteImport.update({
-  id: '/collect',
-  path: '/collect',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollectRoute = CollectRouteImport.update({
+  id: '/collect',
+  path: '/collect',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSitesRoute = ApiSitesRouteImport.update({
@@ -42,30 +42,9 @@ const ApiSitesSiteIdRoute = ApiSitesSiteIdRouteImport.update({
   path: '/$siteId',
   getParentRoute: () => ApiSitesRoute,
 } as any)
-const ApiSitesSiteIdTimeseriesRoute =
-  ApiSitesSiteIdTimeseriesRouteImport.update({
-    id: '/timeseries',
-    path: '/timeseries',
-    getParentRoute: () => ApiSitesSiteIdRoute,
-  } as any)
-const ApiSitesSiteIdSummaryRoute = ApiSitesSiteIdSummaryRouteImport.update({
-  id: '/summary',
-  path: '/summary',
-  getParentRoute: () => ApiSitesSiteIdRoute,
-} as any)
-const ApiSitesSiteIdSourcesRoute = ApiSitesSiteIdSourcesRouteImport.update({
-  id: '/sources',
-  path: '/sources',
-  getParentRoute: () => ApiSitesSiteIdRoute,
-} as any)
-const ApiSitesSiteIdPagesRoute = ApiSitesSiteIdPagesRouteImport.update({
-  id: '/pages',
-  path: '/pages',
-  getParentRoute: () => ApiSitesSiteIdRoute,
-} as any)
-const ApiSitesSiteIdLocationsRoute = ApiSitesSiteIdLocationsRouteImport.update({
-  id: '/locations',
-  path: '/locations',
+const ApiSitesSiteIdActivityRoute = ApiSitesSiteIdActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => ApiSitesSiteIdRoute,
 } as any)
 const ApiSitesSiteIdDevicesRoute = ApiSitesSiteIdDevicesRouteImport.update({
@@ -73,11 +52,32 @@ const ApiSitesSiteIdDevicesRoute = ApiSitesSiteIdDevicesRouteImport.update({
   path: '/devices',
   getParentRoute: () => ApiSitesSiteIdRoute,
 } as any)
-const ApiSitesSiteIdActivityRoute = ApiSitesSiteIdActivityRouteImport.update({
-  id: '/activity',
-  path: '/activity',
+const ApiSitesSiteIdLocationsRoute = ApiSitesSiteIdLocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
   getParentRoute: () => ApiSitesSiteIdRoute,
 } as any)
+const ApiSitesSiteIdPagesRoute = ApiSitesSiteIdPagesRouteImport.update({
+  id: '/pages',
+  path: '/pages',
+  getParentRoute: () => ApiSitesSiteIdRoute,
+} as any)
+const ApiSitesSiteIdSourcesRoute = ApiSitesSiteIdSourcesRouteImport.update({
+  id: '/sources',
+  path: '/sources',
+  getParentRoute: () => ApiSitesSiteIdRoute,
+} as any)
+const ApiSitesSiteIdSummaryRoute = ApiSitesSiteIdSummaryRouteImport.update({
+  id: '/summary',
+  path: '/summary',
+  getParentRoute: () => ApiSitesSiteIdRoute,
+} as any)
+const ApiSitesSiteIdTimeseriesRoute =
+  ApiSitesSiteIdTimeseriesRouteImport.update({
+    id: '/timeseries',
+    path: '/timeseries',
+    getParentRoute: () => ApiSitesSiteIdRoute,
+  } as any)
 const ApiSitesSiteIdRealtimeWsRoute =
   ApiSitesSiteIdRealtimeWsRouteImport.update({
     id: '/realtime/ws',
@@ -181,18 +181,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/collect': {
-      id: '/collect'
-      path: '/collect'
-      fullPath: '/collect'
-      preLoaderRoute: typeof CollectRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collect': {
+      id: '/collect'
+      path: '/collect'
+      fullPath: '/collect'
+      preLoaderRoute: typeof CollectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/sites': {
@@ -209,39 +209,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSitesSiteIdRouteImport
       parentRoute: typeof ApiSitesRoute
     }
-    '/api/sites/$siteId/timeseries': {
-      id: '/api/sites/$siteId/timeseries'
-      path: '/timeseries'
-      fullPath: '/api/sites/$siteId/timeseries'
-      preLoaderRoute: typeof ApiSitesSiteIdTimeseriesRouteImport
-      parentRoute: typeof ApiSitesSiteIdRoute
-    }
-    '/api/sites/$siteId/summary': {
-      id: '/api/sites/$siteId/summary'
-      path: '/summary'
-      fullPath: '/api/sites/$siteId/summary'
-      preLoaderRoute: typeof ApiSitesSiteIdSummaryRouteImport
-      parentRoute: typeof ApiSitesSiteIdRoute
-    }
-    '/api/sites/$siteId/sources': {
-      id: '/api/sites/$siteId/sources'
-      path: '/sources'
-      fullPath: '/api/sites/$siteId/sources'
-      preLoaderRoute: typeof ApiSitesSiteIdSourcesRouteImport
-      parentRoute: typeof ApiSitesSiteIdRoute
-    }
-    '/api/sites/$siteId/pages': {
-      id: '/api/sites/$siteId/pages'
-      path: '/pages'
-      fullPath: '/api/sites/$siteId/pages'
-      preLoaderRoute: typeof ApiSitesSiteIdPagesRouteImport
-      parentRoute: typeof ApiSitesSiteIdRoute
-    }
-    '/api/sites/$siteId/locations': {
-      id: '/api/sites/$siteId/locations'
-      path: '/locations'
-      fullPath: '/api/sites/$siteId/locations'
-      preLoaderRoute: typeof ApiSitesSiteIdLocationsRouteImport
+    '/api/sites/$siteId/activity': {
+      id: '/api/sites/$siteId/activity'
+      path: '/activity'
+      fullPath: '/api/sites/$siteId/activity'
+      preLoaderRoute: typeof ApiSitesSiteIdActivityRouteImport
       parentRoute: typeof ApiSitesSiteIdRoute
     }
     '/api/sites/$siteId/devices': {
@@ -251,11 +223,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSitesSiteIdDevicesRouteImport
       parentRoute: typeof ApiSitesSiteIdRoute
     }
-    '/api/sites/$siteId/activity': {
-      id: '/api/sites/$siteId/activity'
-      path: '/activity'
-      fullPath: '/api/sites/$siteId/activity'
-      preLoaderRoute: typeof ApiSitesSiteIdActivityRouteImport
+    '/api/sites/$siteId/locations': {
+      id: '/api/sites/$siteId/locations'
+      path: '/locations'
+      fullPath: '/api/sites/$siteId/locations'
+      preLoaderRoute: typeof ApiSitesSiteIdLocationsRouteImport
+      parentRoute: typeof ApiSitesSiteIdRoute
+    }
+    '/api/sites/$siteId/pages': {
+      id: '/api/sites/$siteId/pages'
+      path: '/pages'
+      fullPath: '/api/sites/$siteId/pages'
+      preLoaderRoute: typeof ApiSitesSiteIdPagesRouteImport
+      parentRoute: typeof ApiSitesSiteIdRoute
+    }
+    '/api/sites/$siteId/sources': {
+      id: '/api/sites/$siteId/sources'
+      path: '/sources'
+      fullPath: '/api/sites/$siteId/sources'
+      preLoaderRoute: typeof ApiSitesSiteIdSourcesRouteImport
+      parentRoute: typeof ApiSitesSiteIdRoute
+    }
+    '/api/sites/$siteId/summary': {
+      id: '/api/sites/$siteId/summary'
+      path: '/summary'
+      fullPath: '/api/sites/$siteId/summary'
+      preLoaderRoute: typeof ApiSitesSiteIdSummaryRouteImport
+      parentRoute: typeof ApiSitesSiteIdRoute
+    }
+    '/api/sites/$siteId/timeseries': {
+      id: '/api/sites/$siteId/timeseries'
+      path: '/timeseries'
+      fullPath: '/api/sites/$siteId/timeseries'
+      preLoaderRoute: typeof ApiSitesSiteIdTimeseriesRouteImport
       parentRoute: typeof ApiSitesSiteIdRoute
     }
     '/api/sites/$siteId/realtime/ws': {

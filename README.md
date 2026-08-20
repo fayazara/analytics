@@ -129,14 +129,15 @@ curl "http://localhost:3000/cdn-cgi/handler/scheduled"
 
 ## Seeding demo data
 
-For local dev, `scripts/seed-demo-data.mjs` generates realistic fake
-traffic (real referrer domains, real cities/countries, real
-browser/OS/device combos, outbound-link clicks, a fictional SaaS site's
-pages, and a handful of custom events) — daily rollups for the past N
-days, plus raw rows for "today":
+For local dev, `scripts/seed-demo-data.mjs` replaces a site's analytics
+rows with realistic fake traffic (real referrer domains, real
+cities/countries, real browser/OS/device combos, outbound-link clicks, a
+fictional SaaS site's pages, and a handful of custom events). The default
+matches the dashboard's "Last 30 days" range: 29 complete days of daily
+rollups plus raw rows for today.
 
 ```bash
-node scripts/seed-demo-data.mjs <site-id> [days]   # default 90 days
+node scripts/seed-demo-data.mjs <site-id> [days]   # default 30 calendar days
 npx wrangler d1 execute DB --local --file=./seed-output.sql
 ```
 

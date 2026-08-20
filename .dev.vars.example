@@ -2,4 +2,8 @@
 # For production, set with: wrangler secret put MY_SECRET
 # Bindings (D1, KV, R2, etc.) go in wrangler.jsonc, NOT here.
 
-# MY_SECRET="example"
+# Bearer token for the read-only /ext/v1/* API (consumed by the TAP
+# miniapp dashboard). Leave unset to keep /ext/v1/* switched off — it
+# fails closed with 503 rather than serving unauthenticated requests.
+# Generate one with: openssl rand -hex 32
+# ANALYTICS_API_TOKEN="..."

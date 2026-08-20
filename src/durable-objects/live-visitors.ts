@@ -32,6 +32,19 @@ export class LiveVisitors extends DurableObject<Env> {
     return this.lastSeen.size
   }
 
+  /**
+   * Current live count, for callers that can't hold a WebSocket open.
+   *
+   * The miniapp dashboard polls this via `GET /ext/v1/sites/:id/realtime`
+   * because the host-mediated HTTP transport is request/response only —
+   * there's no WebSocket upgrade available to it. Read-only: it sweeps
+   * stale visitors like the alarm does but never schedules one, so
+   * polling an idle site can't keep the object awake.
+   */
+  async count(): Promise<number> {
+    return this.sweepAndCount()
+  }
+
   /** WebSocket upgrade — proxied here from `/api/sites/:id/realtime/ws`. */
   async fetch(request: Request): Promise<Response> {
     if (request.headers.get("Upgrade") !== "websocket") {

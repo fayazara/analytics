@@ -2,10 +2,11 @@
 /**
  * Seeds realistic demo data for local development.
  *
- * Writes rollup rows (`daily_*`) for the past N days directly — that's
- * all the dashboard reads for any range except "today" (see §8 of the
- * spec) — plus a smaller batch of *raw* rows for "today" so the raw-table
- * code path has something to show too.
+ * Replaces a site's analytics rows with data for the last N calendar days.
+ * Complete past days are written directly to the `daily_*` rollups — that's
+ * all the dashboard reads for historical dates (see §8 of the spec) — and a
+ * smaller batch of *raw* rows is written for "today" so the live code path
+ * has something to show too.
  *
  * Usage:
  *   node scripts/seed-demo-data.mjs <site-id> [days]
@@ -20,10 +21,15 @@ import { randomBytes, randomUUID } from "node:crypto"
 import { writeFileSync } from "node:fs"
 
 const siteId = process.argv[2]
-const days = Number(process.argv[3] ?? 90)
+const days = Number(process.argv[3] ?? 30)
 
 if (!siteId) {
   console.error("Usage: node scripts/seed-demo-data.mjs <site-id> [days]")
+  process.exit(1)
+}
+
+if (!Number.isInteger(days) || days < 1) {
+  console.error("[days] must be a positive integer")
   process.exit(1)
 }
 
@@ -307,6 +313,25 @@ function locationIdSubquery(loc) {
 // Generation
 // ---------------------------------------------------------------------------
 
+// Remove the selected site's existing analytics rows first so re-seeding
+// cannot leave stale dates outside the requested window. Shared device and
+// location lookup rows are intentionally retained because other sites may use
+// them; sources are site-specific and can be safely replaced.
+const cleanupStatements = [
+  `DELETE FROM daily_events WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM daily_outbound_links WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM daily_locations WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM daily_devices WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM daily_sources WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM daily_pages WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM daily_summary WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM events WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM outbound_links WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM pages WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM visits WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM visitors WHERE site_id = ${esc(siteId)};`,
+  `DELETE FROM sources WHERE site_id = ${esc(siteId)};`,
+]
 const statements = []
 
 const allVisitorIds = []
@@ -334,13 +359,13 @@ const todayStr = fmtDate(now)
 
 // --- Historical days: rollups only (§8 — dashboard never scans raw for
 // historical ranges, so raw rows for old days would just be dead weight).
-for (let offset = days; offset >= 1; offset--) {
+for (let offset = days - 1; offset >= 1; offset--) {
   const date = new Date(now)
   date.setUTCDate(date.getUTCDate() - offset)
   const dateStr = fmtDate(date)
   const dow = date.getUTCDay()
   const weekdayMultiplier = dow === 0 || dow === 6 ? 0.6 : 1.0
-  const growth = 1 - (offset / days) * 0.55 // ramps up towards "today"
+  const growth = 1 - (offset / Math.max(days - 1, 1)) * 0.55 // ramps up towards "today"
   const jitter = 0.7 + Math.random() * 0.6
   const visitCount = Math.max(
     3,
@@ -537,17 +562,23 @@ for (const [id, first] of visitorFirstSeen) {
 }
 
 // ---------------------------------------------------------------------------
-// Assemble output — lookups first (FK targets), then visitors, then the
-// historical rollups + today's raw rows.
+// Assemble output — remove old site data, recreate lookup/visitor FK targets,
+// then write the historical rollups and today's raw rows.
 // ---------------------------------------------------------------------------
 
-const output = [...lookupInserts, ...visitorRows, ...statements].join("\n")
+const output = [
+  ...cleanupStatements,
+  ...lookupInserts,
+  ...visitorRows,
+  ...statements,
+].join("\n")
 writeFileSync("seed-output.sql", output)
 
 console.log(
-  `Generated ${statements.length + lookupInserts.length + visitorRows.length} statements`
+  `Generated ${cleanupStatements.length + statements.length + lookupInserts.length + visitorRows.length} statements`
 )
-console.log(`  - ${days} days of daily_* rollups`)
+console.log(`  - ${days - 1} complete days of daily_* rollups`)
 console.log(`  - ${todayVisitCount} raw visits for today (${todayStr})`)
+console.log(`  - ${days} calendar days total, including today`)
 console.log(`  - ${visitorRows.length} distinct visitors`)
 console.log(`Wrote seed-output.sql`)
