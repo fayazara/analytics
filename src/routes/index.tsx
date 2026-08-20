@@ -17,6 +17,7 @@ import {
   DesktopIcon,
   DeviceMobileIcon,
   DeviceTabletIcon,
+  GlobeIcon,
   LinuxLogoIcon,
   TrashIcon,
   WindowsLogoIcon,
@@ -26,6 +27,7 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { z } from "zod"
+import type { ReactNode } from "react"
 import type {
   DeviceDimension,
   LocationDimension,
@@ -50,7 +52,8 @@ import {
 } from "@/components/dashboard/icons"
 import { InstallScriptDialog } from "@/components/dashboard/install-script-dialog"
 import { RankedList } from "@/components/dashboard/ranked-list"
-import { useLiveVisitorCount } from "@/hooks/use-live-visitors"
+import { RealtimeGlobe } from "@/components/dashboard/realtime-globe"
+import { useLiveVisitors } from "@/hooks/use-live-visitors"
 import { echarts } from "@/lib/echarts"
 import {
   formatCompactNumber,
@@ -77,6 +80,12 @@ const RANGE_OPTIONS: Array<{ value: UiRangeKey; label: string }> = [
 const searchSchema = z.object({
   site: z.string().optional(),
   range: z.enum(["today", "7d", "30d", "6m", "1y"]).optional(),
+  simulateLocations: z
+    .union([
+      z.boolean(),
+      z.enum(["true", "false"]).transform((value) => value === "true"),
+    ])
+    .optional(),
 })
 
 export const Route = createFileRoute("/")({
@@ -227,7 +236,12 @@ function CardHeader({
   onValueChange,
 }: {
   title: string
-  tabs: Array<{ value: string; label: string }>
+  tabs: Array<{
+    value: string
+    label: ReactNode
+    ariaLabel?: string
+    title?: string
+  }>
   value: string
   onValueChange: (value: string, animate: boolean) => void
 }) {
@@ -244,14 +258,14 @@ function CardHeader({
               variant="ghost"
               size="xs"
               aria-pressed={selected}
+              aria-label={tab.ariaLabel}
+              title={tab.title}
               className={
                 selected
                   ? "bg-kumo-fill text-kumo-default hover:bg-kumo-fill"
                   : "text-kumo-subtle opacity-50 hover:opacity-100"
               }
-              onClick={(event) =>
-                onValueChange(tab.value, event.detail !== 0)
-              }
+              onClick={(event) => onValueChange(tab.value, event.detail !== 0)}
             >
               {tab.label}
             </Button>
@@ -293,6 +307,7 @@ function App() {
     useState<DeviceDimension>("browser")
   const [locationDimension, setLocationDimension] =
     useState<LocationDimension>("country")
+  const [showLocationGlobe, setShowLocationGlobe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [addSiteOpen, setAddSiteOpen] = useState(false)
   const [deleteSiteId, setDeleteSiteId] = useState<string | null>(null)
@@ -302,7 +317,7 @@ function App() {
   const animateDeviceFilterRef = useRef(false)
   const animateLocationFilterRef = useRef(false)
 
-  const liveCount = useLiveVisitorCount(selectedSiteId)
+  const liveVisitors = useLiveVisitors(selectedSiteId)
   const pageList = useTopList<TopPageRow>(
     selectedSiteId,
     range,
@@ -476,9 +491,9 @@ function App() {
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu>
-          {liveCount !== null && liveCount > 0 ? (
+          {liveVisitors.count !== null && liveVisitors.count > 0 ? (
             <Badge variant="success" appearance="dot">
-              {liveCount} online
+              {liveVisitors.count} online
             </Badge>
           ) : null}
         </div>
@@ -703,32 +718,57 @@ function App() {
                 { value: "country", label: "Countries" },
                 { value: "region", label: "Regions" },
                 { value: "city", label: "Cities" },
+                {
+                  value: "globe",
+                  label: <GlobeIcon className="size-4" />,
+                  ariaLabel: "Realtime visitor globe",
+                  title: "Realtime visitor globe",
+                },
               ]}
-              value={locationDimension}
+              value={showLocationGlobe ? "globe" : locationDimension}
               onValueChange={(value, animate) => {
+                if (value === "globe") {
+                  setShowLocationGlobe(true)
+                  return
+                }
                 animateLocationFilterRef.current = animate
+                setShowLocationGlobe(false)
                 setLocationDimension(value as LocationDimension)
               }}
             />
           </LayerCard.Secondary>
-          <LayerCard.Primary className="h-full p-2.5">
-            <RankedList
-              items={locationList.rows.map((r) => ({
-                key: `${r.country}-${r.region}-${r.city}`,
-                label: locationLabel(r, locationDimension),
-                icon: <CountryFlag country={r.country} />,
-                value: r.visits,
-              }))}
-              total={locationList.total}
-              animateItems={locationList.animateItems}
-              emptyLabel={
-                locationDimension === "region"
-                  ? "No region data yet"
-                  : locationDimension === "city"
-                    ? "No city data yet"
-                    : "No country data yet"
-              }
-            />
+          <LayerCard.Primary
+            className={
+              showLocationGlobe ? "h-80 overflow-hidden p-0" : "h-full p-2.5"
+            }
+          >
+            {showLocationGlobe ? (
+              <RealtimeGlobe
+                count={liveVisitors.count ?? 0}
+                locations={liveVisitors.locations}
+                simulate={
+                  import.meta.env.DEV && search.simulateLocations === true
+                }
+              />
+            ) : (
+              <RankedList
+                items={locationList.rows.map((r) => ({
+                  key: `${r.country}-${r.region}-${r.city}`,
+                  label: locationLabel(r, locationDimension),
+                  icon: <CountryFlag country={r.country} />,
+                  value: r.visits,
+                }))}
+                total={locationList.total}
+                animateItems={locationList.animateItems}
+                emptyLabel={
+                  locationDimension === "region"
+                    ? "No region data yet"
+                    : locationDimension === "city"
+                      ? "No city data yet"
+                      : "No country data yet"
+                }
+              />
+            )}
           </LayerCard.Primary>
         </LayerCard>
 

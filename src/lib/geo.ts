@@ -6,14 +6,30 @@ export interface GeoInfo {
   country: string
   region: string | null
   city: string | null
+  latitude: number | null
+  longitude: number | null
+}
+
+function parseCoordinate(
+  value: string | undefined,
+  min: number,
+  max: number
+): number | null {
+  if (!value) return null
+  const coordinate = Number(value)
+  return Number.isFinite(coordinate) && coordinate >= min && coordinate <= max
+    ? coordinate
+    : null
 }
 
 export function extractGeo(request: Request): GeoInfo {
   const cf = (request as { cf?: IncomingRequestCfProperties }).cf
   return {
     country: cf?.country ?? "XX",
-    region: (cf?.regionCode as string | undefined) ?? cf?.region ?? null,
+    region: cf?.regionCode ?? cf?.region ?? null,
     city: cf?.city ?? null,
+    latitude: parseCoordinate(cf?.latitude, -90, 90),
+    longitude: parseCoordinate(cf?.longitude, -180, 180),
   }
 }
 

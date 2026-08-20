@@ -97,7 +97,7 @@ export function RankedList({
               />
               <div className="relative flex min-w-0 flex-1 items-center gap-2">
                 {item.icon}
-                <span className="truncate">{item.label}</span>
+                <span className="truncate tracking-wide">{item.label}</span>
               </div>
               <div className="relative flex shrink-0 items-center">
                 <span className="font-medium text-kumo-default">

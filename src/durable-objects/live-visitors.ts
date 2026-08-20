@@ -1,4 +1,8 @@
 import { DurableObject } from "cloudflare:workers"
+import type {
+  RealtimeVisitorLocation,
+  RealtimeVisitorsPayload,
+} from "@/lib/realtime"
 
 /**
  * LiveVisitors — one Durable Object per site (§11 of the spec).
@@ -17,18 +21,38 @@ const STALE_AFTER_MS = 5 * 60 * 1000
 const SWEEP_INTERVAL_MS = 60 * 1000
 
 export class LiveVisitors extends DurableObject<Env> {
-  private lastSeen = new Map<string, number>()
+  private lastSeen = new Map<
+    string,
+    {
+      seenAt: number
+      location: Omit<RealtimeVisitorLocation, "count"> | null
+    }
+  >()
 
   /** Called by `/collect` on every pageview for this site. */
-  async ping(visitorId: string): Promise<number> {
+  async ping(
+    visitorId: string,
+    location?: Omit<RealtimeVisitorLocation, "count">
+  ): Promise<number> {
     const before = this.lastSeen.size
-    this.lastSeen.set(visitorId, Date.now())
+    const previous = this.lastSeen.get(visitorId)
+    const nextLocation = location ?? null
+    this.lastSeen.set(visitorId, {
+      seenAt: Date.now(),
+      location: nextLocation,
+    })
 
     if ((await this.ctx.storage.getAlarm()) === null) {
       await this.ctx.storage.setAlarm(Date.now() + SWEEP_INTERVAL_MS)
     }
 
-    if (this.lastSeen.size !== before) this.broadcast()
+    if (
+      this.lastSeen.size !== before ||
+      previous?.location?.latitude !== nextLocation?.latitude ||
+      previous?.location?.longitude !== nextLocation?.longitude
+    ) {
+      this.broadcast()
+    }
     return this.lastSeen.size
   }
 
@@ -53,7 +77,8 @@ export class LiveVisitors extends DurableObject<Env> {
 
     const pair = new WebSocketPair()
     this.ctx.acceptWebSocket(pair[1])
-    pair[1].send(JSON.stringify({ count: this.sweepAndCount() }))
+    this.sweepAndCount()
+    pair[1].send(JSON.stringify(this.payload()))
 
     return new Response(null, { status: 101, webSocket: pair[0] })
   }
@@ -89,20 +114,43 @@ export class LiveVisitors extends DurableObject<Env> {
 
   private sweepAndCount(): number {
     const cutoff = Date.now() - STALE_AFTER_MS
-    for (const [visitorId, seenAt] of this.lastSeen) {
-      if (seenAt < cutoff) this.lastSeen.delete(visitorId)
+    for (const [visitorId, visitor] of this.lastSeen) {
+      if (visitor.seenAt < cutoff) this.lastSeen.delete(visitorId)
     }
     return this.lastSeen.size
   }
 
   private broadcast(): void {
-    const payload = JSON.stringify({ count: this.lastSeen.size })
+    const payload = JSON.stringify(this.payload())
     for (const ws of this.ctx.getWebSockets()) {
       try {
         ws.send(payload)
       } catch {
         // socket may have closed between getWebSockets() and send()
       }
+    }
+  }
+
+  private payload(): RealtimeVisitorsPayload {
+    const locations = new Map<string, RealtimeVisitorLocation>()
+
+    for (const visitor of this.lastSeen.values()) {
+      if (!visitor.location) continue
+      const { latitude, longitude } = visitor.location
+      const key = `${latitude}:${longitude}`
+      const existing = locations.get(key)
+      if (existing) {
+        existing.count += 1
+      } else {
+        locations.set(key, { latitude, longitude, count: 1 })
+      }
+    }
+
+    return {
+      count: this.lastSeen.size,
+      locations: Array.from(locations.values()).sort(
+        (a, b) => b.count - a.count
+      ),
     }
   }
 }

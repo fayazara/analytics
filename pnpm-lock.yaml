@@ -41,6 +41,9 @@ importers:
       '@tanstack/router-plugin':
         specifier: ^1.168.34
         version: 1.168.34(@tanstack/react-router@1.170.31(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(esbuild@0.28.1)(rolldown@1.2.5)(rollup@4.60.1)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.0))
+      cobe:
+        specifier: ^2.0.1
+        version: 2.0.1
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2
@@ -2305,6 +2308,9 @@ packages:
   cnfast@0.0.8:
     resolution: {integrity: sha512-EjXKMfGfdwtV4AcNSQ6AwQaVzpC1B7IxeiwA3FlhTXz+YFlMKVi4c1JX9tgD2QOlahQXjB8KUXrBaYG+3v871Q==}
     hasBin: true
+
+  cobe@2.0.1:
+    resolution: {integrity: sha512-aaa6vcIlaC8C1SF50LDH0Anybo/EAXnrxqe+bwvr4+YUtZydqjeBjTTD7ziCCkbRrRGSns3I3F6cZsf3W+L+ag==}
 
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -5741,6 +5747,8 @@ snapshots:
   clsx@2.1.1: {}
 
   cnfast@0.0.8: {}
+
+  cobe@2.0.1: {}
 
   color-convert@2.0.1:
     dependencies:

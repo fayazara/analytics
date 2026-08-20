@@ -229,8 +229,15 @@ async function handlePageview(
   // Fire-and-forget ping to the site's LiveVisitors DO (§11). Never let a
   // DO hiccup affect ingestion.
   const stub = env.LIVE_VISITORS.getByName(site.id)
+  const realtimeLocation =
+    ctx.geo.latitude !== null && ctx.geo.longitude !== null
+      ? {
+          latitude: ctx.geo.latitude,
+          longitude: ctx.geo.longitude,
+        }
+      : undefined
   waitUntil(
-    stub.ping(visitorId).then(
+    stub.ping(visitorId, realtimeLocation).then(
       () => undefined,
       () => undefined
     )

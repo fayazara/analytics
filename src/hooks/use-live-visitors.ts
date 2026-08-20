@@ -1,15 +1,23 @@
 import { useEffect, useRef, useState } from "react"
+import type { RealtimeVisitorsPayload } from "@/lib/realtime"
 
 /**
  * Opens a WebSocket to the site's `LiveVisitors` Durable Object (§11) and
- * returns the live visitor count, pushed by the server — no polling.
+ * returns the live visitor count and approximate locations, pushed by the
+ * server — no polling.
  */
-export function useLiveVisitorCount(siteId: string | undefined): number | null {
-  const [count, setCount] = useState<number | null>(null)
+export function useLiveVisitors(siteId: string | undefined): {
+  count: number | null
+  locations: RealtimeVisitorsPayload["locations"]
+} {
+  const [state, setState] = useState<{
+    count: number | null
+    locations: RealtimeVisitorsPayload["locations"]
+  }>({ count: null, locations: [] })
   const wsRef = useRef<WebSocket | null>(null)
 
   useEffect(() => {
-    setCount(null)
+    setState({ count: null, locations: [] })
     if (!siteId) return
 
     let cancelled = false
@@ -25,8 +33,15 @@ export function useLiveVisitorCount(siteId: string | undefined): number | null {
 
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data as string) as { count?: number }
-          if (typeof data.count === "number") setCount(data.count)
+          const data = JSON.parse(
+            event.data as string
+          ) as Partial<RealtimeVisitorsPayload>
+          if (typeof data.count === "number") {
+            setState({
+              count: data.count,
+              locations: Array.isArray(data.locations) ? data.locations : [],
+            })
+          }
         } catch {
           // ignore malformed frame
         }
@@ -47,5 +62,5 @@ export function useLiveVisitorCount(siteId: string | undefined): number | null {
     }
   }, [siteId])
 
-  return count
+  return state
 }
