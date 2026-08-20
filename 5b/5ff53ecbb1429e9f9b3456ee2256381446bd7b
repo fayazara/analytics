@@ -1,0 +1,35 @@
+package.json
+  s_71f7919d448308::t_fb2ea4740d92a4 33
+pnpm-lock.yaml
+  s_71f7919d448308::t_c5f2e20a5779a3 44-46,2312-2314,5751-5752
+src/hooks/use-live-visitors.ts
+  s_71f7919d448308::t_61fdd146182dbc 2,6-7,9-16,20,36-44,65
+src/components/dashboard/ranked-list.tsx
+  s_71f7919d448308::t_4ae2e882d25f68 100
+src/components/dashboard/realtime-globe.tsx
+  s_71f7919d448308::t_d3394960565b91 1-223
+src/durable-objects/live-visitors.ts
+  s_71f7919d448308::t_53dd7f3426ffe4 2-5,24-30,33-36,38-43,49-55,80-81,117-118,124,133-155
+src/lib/geo.ts
+  s_71f7919d448308::t_3f249722079e81 9-22,29,31-32
+src/lib/realtime.ts
+  s_71f7919d448308::t_eb3b224dab49f6 1-10
+src/routes/collect.ts
+  s_71f7919d448308::t_9e832b6781921b 232-238,240
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5b5ff53ecbb1429e9f9b3456ee2256381446bd7b",
+  "prompts": {},
+  "sessions": {
+    "s_71f7919d448308": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01d6c-0ac1-7532-a872-3097aba99513",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Fayaz Ahmed <fayazara@gmail.com>"
+    }
+  }
+}
