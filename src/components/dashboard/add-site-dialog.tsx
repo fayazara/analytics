@@ -72,58 +72,69 @@ export function AddSiteDialog({
           )}
         />
       ) : null}
-      <Dialog className="p-4">
-        <Dialog.Title className="mb-4 text-lg font-semibold">
-          Add a site
-        </Dialog.Title>
-        <form onSubmit={submit} className="flex flex-col gap-4">
-          <Input
-            label="Name"
-            placeholder="My blog"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <Input
-            label="Domain"
-            placeholder="example.com"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            required
-          />
-          <Input
-            label="Timezone"
-            placeholder="UTC"
-            description="IANA timezone, e.g. America/New_York"
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-          />
-          {error ? <p className="text-xs text-kumo-danger">{error}</p> : null}
-          <div className="flex justify-end gap-2">
-            <Dialog.Close
-              render={(closeProps) => (
-                <Button
-                  {...closeProps}
-                  variant="secondary"
-                  type="button"
-                  aria-label="Cancel"
-                  size="sm"
-                >
-                  Cancel
-                </Button>
-              )}
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              loading={isPending}
-              disabled={isPending}
-              size="sm"
+      <Dialog className="min-w-0 overflow-visible bg-transparent p-0 shadow-none ring-0 sm:w-150">
+        <div className="flex max-h-[calc(100vh-32px)] w-full flex-col overflow-hidden rounded-xl bg-kumo-elevated text-base text-kumo-default ring ring-kumo-line">
+          <header className="px-4 py-3">
+            <Dialog.Title className="text-lg font-medium text-pretty text-kumo-default">
+              Add a site
+            </Dialog.Title>
+          </header>
+          <div className="relative flex grow flex-col gap-2 overflow-hidden rounded-lg bg-kumo-base p-0 text-inherit ring ring-kumo-fill">
+            <form
+              onSubmit={submit}
+              className="flex grow flex-col overflow-hidden"
             >
-              Create site
-            </Button>
+              <div className="grid grow gap-4 overflow-y-auto p-4">
+                <Input
+                  label="Name"
+                  placeholder="My blog"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Domain"
+                  placeholder="example.com"
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Timezone"
+                  placeholder="UTC"
+                  description="IANA timezone, e.g. America/New_York"
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                />
+                {error ? (
+                  <p className="text-xs text-kumo-danger">{error}</p>
+                ) : null}
+              </div>
+              <footer className="flex items-center justify-end gap-2 border-t border-kumo-line p-4">
+                <Dialog.Close
+                  render={(closeProps) => (
+                    <Button
+                      {...closeProps}
+                      variant="secondary"
+                      type="button"
+                      aria-label="Cancel"
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={isPending}
+                  disabled={isPending}
+                >
+                  Create site
+                </Button>
+              </footer>
+            </form>
           </div>
-        </form>
+        </div>
       </Dialog>
     </Dialog.Root>
   )
