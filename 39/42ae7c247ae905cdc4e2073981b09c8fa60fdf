@@ -1,0 +1,21 @@
+src/components/dashboard/add-site-dialog.tsx
+  s_4a1410578fff6f::t_5db3a01b3eac47 75-125,127-130,132,134-135,137
+src/components/dashboard/install-script-dialog.tsx
+  s_4a1410578fff6f::t_03613475509a42 24-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3942ae7c247ae905cdc4e2073981b09c8fa60fdf",
+  "prompts": {},
+  "sessions": {
+    "s_4a1410578fff6f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01d54-a96e-7d91-9dc3-f662788139f1",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "Fayaz Ahmed <fayazara@gmail.com>"
+    }
+  }
+}
